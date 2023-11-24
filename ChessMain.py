@@ -28,14 +28,14 @@ def drawBoard(screen):
             p.draw.rect(screen,color, p.Rect(col*SQ_SIZE,row*SQ_SIZE,SQ_SIZE,SQ_SIZE))
 
      # Dodawanie liter do lewej krawędzi
-    letters = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h']
+    letters = ['h', 'g', 'f', 'e', 'd', 'c', 'b', 'a']
     font = p.font.Font(None, 36)
     for i in range(DIMENSION):
         text = font.render(letters[i], True, p.Color('grey'))
         screen.blit(text, (0, i * SQ_SIZE + SQ_SIZE / 2 - text.get_height() / 2))
     
     # Dodawanie liczb do dolnej krawędzi
-    numbers = ['8', '7', '6', '5', '4', '3', '2', '1']
+    numbers = ['1', '2', '3', '4', '5', '6', '7', '8']
     for i in range(DIMENSION):
         text = font.render(numbers[i], True, p.Color('grey'))
         screen.blit(text, (i * SQ_SIZE + SQ_SIZE / 2 - text.get_width() / 2, 0))

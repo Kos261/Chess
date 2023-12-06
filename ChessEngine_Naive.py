@@ -110,7 +110,6 @@ class GameState():
                 return True
         return False
         
-
     def getAllPossibleMoves(self): 
         moves = []
         for row in range(len(self.board)):
@@ -240,6 +239,14 @@ class GameState():
         #         else:       #Poza planszą
         #             break
 
+
+class CastleRights():
+    def __init__(self,wKs,bKs,wQs,bQs):
+        self.wKs = wKs
+        self.bKs = bKs
+        self.wQs = wQs
+        self.bQs = bQs
+        
 
 class Move():
     ranksToRows = {"1":7, "2":6, "3":5, "4":4, "5":3, "6":2, "7":1, "8":0} #key:value

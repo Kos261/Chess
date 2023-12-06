@@ -40,8 +40,9 @@ class GameState():
                 self.whiteKingLocation = (move.endRow, move.endCol)
 
         #pawn promotion
-        if move.isPawnPromotion:
-            self.board[move.endRow][move.endCol] = move.pieceMoved[0] +'Q'
+        if move.pawnPromotion:
+            promotedPiece = input("Promote to Q, R, B or N: ")          #Tu można zdebugować potem
+            self.board[move.endRow][move.endCol] = move.pieceMoved[0] + promotedPiece
 
         #en passante
         if move.isEnPassantMove:
@@ -200,53 +201,44 @@ class GameState():
                 self.pins.remove(self.pins[i])
                 break
 
-        if self.WhiteToMove: #Białe
-            if self.board[row-1][col] == "--": #Pole przed pionem puste
-                if not piecePinned or pinDirection == (-1,0):
-                    moves.append(Move((row,col),(row-1,col),self.board))
-                    if self.board[row-2][col] == "--" and row == 6:             #2 puste i pozycja startowa
-                        moves.append(Move((row,col),(row-2,col),self.board))
+        if self.WhiteToMove:
+            moveAmount = -1
+            startRow = 6
+            backRow = 0
+            enemyColor = 'b'
 
-            if col-1 >= 0:
-                if self.board[row-1][col-1][0] == "b":
-                    if not piecePinned or pinDirection == (-1,-1):                   
-                        moves.append(Move((row,col),(row-1,col-1),self.board))  #Zbijamy po skosie lewo
-                elif (row-1,col-1) == self.enpassantPossible:
-                    if not piecePinned or pinDirection == (-1,-1):
-                        moves.append(Move((row,col),(row-1,col-1),self.board,isEnPassantMove=True))
-                
-            if col+1 < 7:
-                if self.board[row-1][col+1][0] == "b":
-                    if not piecePinned or pinDirection == (-1,1):               #Czarna figura
-                        moves.append(Move((row,col),(row-1,col+1),self.board))  #Zbijamy po skosie prawo
-                elif (row-1,col+1) == self.enpassantPossible:
-                    if not piecePinned or pinDirection == (-1,1):
-                        moves.append(Move((row,col),(row-1,col+1),self.board,isEnPassantMove=True))
+        else:
+            moveAmount = 1
+            startRow = 1
+            backRow = 7
+            enemyColor = 'w'
 
-        else:                   #Czarne
-            if self.board[row+1][col] == "--":
-                if not piecePinned or pinDirection == (1,0):
-                    moves.append(Move((row,col),(row+1,col),self.board))
-                    if self.board[row+2][col] == "--" and row == 1:              #2 puste i pozycja startowa
-                        moves.append(Move((row,col),(row+2,col),self.board))
+        pawnPromotion = False
+        
+        if self.board[row+moveAmount][col] == '--':
+            if not piecePinned or pinDirection == (moveAmount,0):
+                if row+moveAmount == backRow:
+                    pawnPromotion = True
+                moves.append(Move((row,col),(row+moveAmount,col),self.board, pawnPromotion = pawnPromotion))
+                if row == startRow and self.board[row+2*moveAmount][col] == '--':
+                    moves.append(Move((row,col),(row+2*moveAmount,col),self.board))
+        if col-1 >= 0:
+            if not piecePinned or pinDirection == (moveAmount,-1):
+                if self.board[row+moveAmount][col-1][0] == enemyColor:
+                    if row+moveAmount == backRow:
+                        pawnPromotion = True
+                    moves.append(Move((row,col),(row+moveAmount,col-1), self.board, pawnPromotion = pawnPromotion))
+                if (row+moveAmount, col-1) == self.enpassantPossible:
+                    moves.append(Move((row,col),(row+moveAmount,col-1), self.board, isEnPassantMove=True))
 
-
-            if col-1 >= 0:
-                if self.board[row+1][col-1][0] == "w":    
-                    if not piecePinned or pinDirection == (1,-1):                #Biała figura
-                        moves.append(Move((row,col),(row+1,col-1),self.board))   #Zbijamy po skosie lewo
-                elif (row+1,col-1) == self.enpassantPossible:
-                    if not piecePinned or pinDirection == (1,-1):
-                        moves.append(Move((row,col),(row+1,col-1),self.board,isEnPassantMove=True))
-
-
-            if col+1 < 7:
-                if self.board[row+1][col+1][0] == "w":  
-                    if not piecePinned or pinDirection == (1,1):                 #Biała figura
-                        moves.append(Move((row,col),(row+1,col+1),self.board))   #Zbijamy po skosie prawo
-                elif (row+1,col+1) == self.enpassantPossible:
-                    if not piecePinned or pinDirection == (1,1):
-                        moves.append(Move((row,col),(row+1,col+1),self.board,isEnPassantMove=True))
+        if col+1 <= 7:
+            if not piecePinned or pinDirection == (moveAmount,1):
+                if self.board[row+moveAmount][col+1][0] == enemyColor:
+                    if row+moveAmount == backRow:
+                        pawnPromotion = True
+                    moves.append(Move((row,col),(row+moveAmount,col+1), self.board, pawnPromotion = pawnPromotion))
+                if (row+moveAmount, col-1) == self.enpassantPossible:
+                    moves.append(Move((row,col),(row+moveAmount,col+1), self.board, isEnPassantMove=True))
 
     def getRookMoves(self,row,col,moves):
         piecePinned = False
@@ -386,7 +378,7 @@ class Move():
     filesToCols = {"a":0, "b":1, "c":2, "d":3, "e":4, "f":5, "g":6, "h":7}
     colsToFiles = {v:k for k,v in filesToCols.items()}
 
-    def __init__(self,startSq,endSq,board,isEnPassantMove = False):
+    def __init__(self,startSq,endSq,board,isEnPassantMove = False, pawnPromotion = False):
         self.board = board
         self.startRow = startSq[0]
         self.startCol = startSq[1]
@@ -394,15 +386,12 @@ class Move():
         self.endCol = endSq[1]
         self.pieceMoved = board[self.startRow][self.startCol]
         self.pieceCaptured = board[self.endRow][self.endCol]
+        self.pawnPromotion = pawnPromotion
 
         #en passant true/false
         self.isEnPassantMove = isEnPassantMove
         if self.isEnPassantMove:
             self.pieceCaptured = 'wp' if self.pieceMoved == 'bp' else 'bp'
-
-
-        #Promotion
-        self.isPawnPromotion = (self.pieceMoved == "wp" and self.endRow == 0) or (self.pieceMoved == "bp" and self.endRow == 7)
 
         self.moveID = self.startRow * 1000 + self.startCol * 100 + self.endRow * 10 + self.endCol
         

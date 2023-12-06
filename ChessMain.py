@@ -1,6 +1,6 @@
 #Ta klasa odpowiada za user input i za grę
 import pygame as p
-import ChessEngine_Advanced
+import ChessEngine_Advanced,ChessEngine_Naive
 
 WIDTH = HEIGHT = 512
 DIMENSION = 8

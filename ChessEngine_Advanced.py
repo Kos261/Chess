@@ -25,6 +25,7 @@ class GameState():
         self.inCheck = False
         self.pins = []
         self.checks = []
+        self.enpassantPossible = ()
         
     def makeMove(self, move):
         #To bierze ruch jako parameter (nie działa dla roszady i en-passante)
@@ -38,6 +39,20 @@ class GameState():
             if move.pieceMoved[0] == 'w':
                 self.whiteKingLocation = (move.endRow, move.endCol)
 
+        #pawn promotion
+        if move.isPawnPromotion:
+            self.board[move.endRow][move.endCol] = move.pieceMoved[0] +'Q'
+
+        #en passante
+        if move.isEnPassantMove:
+            self.board[move.startRow][move.endCol] = '--'
+
+        #updating enpassant square location
+        if move.pieceMoved[1] == 'p' and abs(move.startRow - move.endRow) == 2:
+            self.enpassantPossible = ((move.startRow + move.endRow)//2,move.endCol)   #Pole pomiędzy jest enpassant
+        else:
+            self.enpassantPossible = ()
+
     def undoMove(self):
         if len(self.moveLog) != 0:
             move = self.moveLog.pop()
@@ -48,6 +63,16 @@ class GameState():
                 self.whiteKingLocation = (move.startRow , move.startCol)
             elif move.pieceMoved == "bK":
                 self.blackKingLocation = (move.startRow , move.startCol)
+
+            #Undo enpassant
+            if move.isEnPassantMove:
+                self.board[move.endRow][move.endCol] = '--'
+                self.board[move.startRow][move.endCol] = move.pieceCaptured
+                self.enpassantPossible = (move.endRow,move.endCol)
+
+            #Undo 2 square pawn advance
+            if move.pieceMoved[1] == 'p' and abs(move.startRow - move.endRow) == 2:
+                self.enpassantPossible = ()
 
     def getValidMoves(self):
         moves = []
@@ -67,7 +92,7 @@ class GameState():
                 checkCol = check[1]
                 pieceChecking = self.board[checkRow][checkCol]
                 validSquares = []
-                if pieceChecking[1] == 'N':
+                if pieceChecking[1] == 'N': 
                     validSquares = [(checkRow,checkCol)]
                 else:
                     for i in range(1,8):
@@ -87,7 +112,6 @@ class GameState():
 
         else:
             moves = self.getAllPossibleMoves()
-
         return moves
     
     def checkForPinsAndChecks(self):
@@ -187,10 +211,17 @@ class GameState():
                 if self.board[row-1][col-1][0] == "b":
                     if not piecePinned or pinDirection == (-1,-1):                   
                         moves.append(Move((row,col),(row-1,col-1),self.board))  #Zbijamy po skosie lewo
+                elif (row-1,col-1) == self.enpassantPossible:
+                    if not piecePinned or pinDirection == (-1,-1):
+                        moves.append(Move((row,col),(row-1,col-1),self.board,isEnPassantMove=True))
+                
             if col+1 < 7:
                 if self.board[row-1][col+1][0] == "b":
                     if not piecePinned or pinDirection == (-1,1):               #Czarna figura
                         moves.append(Move((row,col),(row-1,col+1),self.board))  #Zbijamy po skosie prawo
+                elif (row-1,col+1) == self.enpassantPossible:
+                    if not piecePinned or pinDirection == (-1,1):
+                        moves.append(Move((row,col),(row-1,col+1),self.board,isEnPassantMove=True))
 
         else:                   #Czarne
             if self.board[row+1][col] == "--":
@@ -204,10 +235,18 @@ class GameState():
                 if self.board[row+1][col-1][0] == "w":    
                     if not piecePinned or pinDirection == (1,-1):                #Biała figura
                         moves.append(Move((row,col),(row+1,col-1),self.board))   #Zbijamy po skosie lewo
+                elif (row+1,col-1) == self.enpassantPossible:
+                    if not piecePinned or pinDirection == (1,-1):
+                        moves.append(Move((row,col),(row+1,col-1),self.board,isEnPassantMove=True))
+
+
             if col+1 < 7:
                 if self.board[row+1][col+1][0] == "w":  
                     if not piecePinned or pinDirection == (1,1):                 #Biała figura
                         moves.append(Move((row,col),(row+1,col+1),self.board))   #Zbijamy po skosie prawo
+                elif (row+1,col+1) == self.enpassantPossible:
+                    if not piecePinned or pinDirection == (1,1):
+                        moves.append(Move((row,col),(row+1,col+1),self.board,isEnPassantMove=True))
 
     def getRookMoves(self,row,col,moves):
         piecePinned = False
@@ -342,13 +381,12 @@ class GameState():
                     break
 
 class Move():
-    #Tu jest kurwa machlojka niezła z zamianą pól (row,col) na te z szachownicy
     ranksToRows = {"1":7, "2":6, "3":5, "4":4, "5":3, "6":2, "7":1, "8":0} #key:value
     rowsToRanks = {v:k for k,v in ranksToRows.items()}                     #value:key
     filesToCols = {"a":0, "b":1, "c":2, "d":3, "e":4, "f":5, "g":6, "h":7}
     colsToFiles = {v:k for k,v in filesToCols.items()}
 
-    def __init__(self,startSq,endSq,board):
+    def __init__(self,startSq,endSq,board,isEnPassantMove = False):
         self.board = board
         self.startRow = startSq[0]
         self.startCol = startSq[1]
@@ -356,13 +394,18 @@ class Move():
         self.endCol = endSq[1]
         self.pieceMoved = board[self.startRow][self.startCol]
         self.pieceCaptured = board[self.endRow][self.endCol]
-        self.isPawnPromotion = False
-        if (self.pieceMoved == "wp" and self.endRow == 0) or (self.pieceMoved == "bp" and self.endRow == 7):
-            self.isPawnPromotion = True
 
+        #en passant true/false
+        self.isEnPassantMove = isEnPassantMove
+        if self.isEnPassantMove:
+            self.pieceCaptured = 'wp' if self.pieceMoved == 'bp' else 'bp'
+
+
+        #Promotion
+        self.isPawnPromotion = (self.pieceMoved == "wp" and self.endRow == 0) or (self.pieceMoved == "bp" and self.endRow == 7)
 
         self.moveID = self.startRow * 1000 + self.startCol * 100 + self.endRow * 10 + self.endCol
-        #print(self.moveID)
+        
 
     def __eq__(self,other):
         if isinstance(other,Move):

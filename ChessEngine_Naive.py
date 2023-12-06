@@ -21,6 +21,7 @@ class GameState():
         self.whiteKingLocation = (7,4)
         self.blackKingLocation = (0,4)
         self.moveLog = []
+        self.enpassantPossible = ()
 
     def makeMove(self, move):
         #To bierze ruch jako parameter (nie działa dla roszady i en-passante)
@@ -33,6 +34,20 @@ class GameState():
         elif move.pieceMoved == "bK":
             self.blackKingLocation = (move.endRow , move.endCol)
 
+        #pawn promotion
+        if move.isPawnPromotion:
+            self.board[move.endRow][move.endCol] = move.pieceMoved[0] +'Q'
+
+        #en passante
+        if move.isEnPassantMove:
+            self.board[move.startRow][move.endCol] = '--'
+
+        #updating enpassant square location
+        if move.pieceMoved[1] == 'p' and abs(move.startRow - move.endRow) == 2:
+            self.enpassantPossible = ((move.startRow + move.endRow)//2,move.endCol)   #Pole pomiędzy jest enpassant
+        else:
+            self.enpassantPossible = ()
+        
     def undoMove(self):
         if len(self.moveLog) != 0:
             move = self.moveLog.pop()
@@ -43,6 +58,15 @@ class GameState():
                 self.whiteKingLocation = (move.startRow , move.startCol)
             elif move.pieceMoved == "bK":
                 self.blackKingLocation = (move.startRow , move.startCol)
+            #Undo enpassant
+            if move.isEnPassantMove:
+                self.board[move.endRow][move.endCol] = '--'
+                self.board[move.startRow][move.endCol] = move.pieceCaptured
+                self.enpassantPossible = (move.endRow,move.endCol)
+
+            #Undo 2 square pawn advance
+            if move.pieceMoved[1] == 'p' and abs(move.startRow - move.endRow) == 2:
+                self.enpassantPossible = ()
 
     def getValidMoves(self):
         #1) wygeneruj wszystkie ruchy
@@ -50,6 +74,7 @@ class GameState():
         #3) wygeneruj wszystkie ruchy przeciwnika
         #4) dla każdego z nich sprawdź czy atakuje króla
         #5) jeśli tak, to nie jest prawidłowy ruch dla ciebie
+        tempEnPassant = self.enpassantPossible
         moves = self.getAllPossibleMoves()
         for i in range(len(moves)-1,-1,-1):
             self.makeMove(moves[i])
@@ -67,7 +92,7 @@ class GameState():
         else:
             self.checkMate = False
             self.staleMate = False
-
+        self.enpassantPossible = tempEnPassant
         return moves
 
     def inCheck(self):
@@ -104,10 +129,16 @@ class GameState():
                     moves.append(Move((row,col),(row-2,col),self.board))
             if col-1 >= 0:
                 if self.board[row-1][col-1][0] == "b":                       #Czarna figura
-                    moves.append(Move((row,col),(row-1,col-1),self.board))   #Zbijamy po skosie
+                    moves.append(Move((row,col),(row-1,col-1),self.board))   #Zbijamy po skosie lewo
+                elif (row-1,col-1) == self.enpassantPossible:
+                    moves.append(Move((row,col),(row-1,col-1),self.board,isEnPassantMove=True))
+
+
             if col+1 < 7:
                 if self.board[row-1][col+1][0] == "b":                       #Czarna figura
-                    moves.append(Move((row,col),(row-1,col+1),self.board))   #Zbijamy po skosie
+                    moves.append(Move((row,col),(row-1,col+1),self.board))   #Zbijamy po skosie prawo
+                elif (row-1,col+1) == self.enpassantPossible:
+                    moves.append(Move((row,col),(row-1,col+1),self.board,isEnPassantMove=True))
 
         else:                   #Czarne
             if self.board[row+1][col] == "--":
@@ -116,10 +147,15 @@ class GameState():
                     moves.append(Move((row,col),(row+2,col),self.board))
             if col-1 >= 0:
                 if self.board[row+1][col-1][0] == "w":                       #Biała figura
-                    moves.append(Move((row,col),(row+1,col-1),self.board))   #Zbijamy po skosie
+                    moves.append(Move((row,col),(row+1,col-1),self.board))   #Zbijamy po skosie lewo
+                elif (row+1,col-1) == self.enpassantPossible:
+                    moves.append(Move((row,col),(row+1,col-1),self.board,isEnPassantMove=True))
+
             if col+1 < 7:
                 if self.board[row+1][col+1][0] == "w":                       #Biała figura
-                    moves.append(Move((row,col),(row+1,col+1),self.board))   #Zbijamy po skosie
+                    moves.append(Move((row,col),(row+1,col+1),self.board))   #Zbijamy po skosie prawo
+                elif (row+1,col+1) == self.enpassantPossible:
+                   moves.append(Move((row,col),(row+1,col+1),self.board,isEnPassantMove=True))
 
     def getRookMoves(self,row,col,moves):
         directions = ((-1,0),(1,0),(0,-1),(0,1)) #Góra Dół Lewo Prawo
@@ -206,21 +242,28 @@ class GameState():
 
 
 class Move():
-    #Tu jest kurwa machlojka niezła z zamianą pól (row,col) na te z szachownicy
     ranksToRows = {"1":7, "2":6, "3":5, "4":4, "5":3, "6":2, "7":1, "8":0} #key:value
     rowsToRanks = {v:k for k,v in ranksToRows.items()}                     #value:key
     filesToCols = {"a":0, "b":1, "c":2, "d":3, "e":4, "f":5, "g":6, "h":7}
     colsToFiles = {v:k for k,v in filesToCols.items()}
 
-    def __init__(self,startSq,endSq,board):
+    def __init__(self,startSq,endSq,board,isEnPassantMove = False):
         self.startRow = startSq[0]
         self.startCol = startSq[1]
         self.endRow = endSq[0] 
         self.endCol = endSq[1]
         self.pieceMoved = board[self.startRow][self.startCol]
         self.pieceCaptured = board[self.endRow][self.endCol]
+
+        #en passant true/false
+        self.isEnPassantMove = isEnPassantMove
+        if self.isEnPassantMove:
+            self.pieceCaptured = 'wp' if self.pieceMoved == 'bp' else 'bp'
+
+
+        #Promotion
+        self.isPawnPromotion = (self.pieceMoved == "wp" and self.endRow == 0) or (self.pieceMoved == "bp" and self.endRow == 7)
         self.moveID = self.startRow * 1000 + self.startCol * 100 + self.endRow * 10 + self.endCol
-        #print(self.moveID)
 
     def __eq__(self,other):
         if isinstance(other,Move):

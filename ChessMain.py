@@ -82,7 +82,7 @@ if __name__ == '__main__':
                     
                     for i in range(len(validMoves)):
                         if move == validMoves[i]:
-                            print(move.getChessNotation())
+                            # print(move.getChessNotation())
                             gs.makeMove(validMoves[i])
                             moveMade = True
                             sqSelected = ()
@@ -97,13 +97,7 @@ if __name__ == '__main__':
 
 
         if moveMade:
-            # if gs.WhiteToMove: 
-            #     print("White")
-            # else: 
-            #     print("Block")
             validMoves = gs.getValidMoves()
-            for move in validMoves:
-                print(move.getChessNotation())
             moveMade = False
 
         drawGameState(screen,gs)

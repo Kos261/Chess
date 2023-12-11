@@ -4,14 +4,14 @@ class GameState():
     def __init__(self):
         #Pierwsza litera kolor, druga rodzaj R-rook, N-knight, B-bishop, Q-queen, K-king "--" puste
         self.board = [
-            ["bR","--","--","--","bK","--","--","bR"],
+            ["bR","bN","bB","bQ","bK","bB","bN","bR"],
             ["bp","bp","bp","bp","bp","bp","bp","bp"],
             ["--","--","--","--","--","--","--","--"],
             ["--","--","--","--","--","--","--","--"],
             ["--","--","--","--","--","--","--","--"],
             ["--","--","--","--","--","--","--","--"],
             ["wp","wp","wp","wp","wp","wp","wp","wp"],
-            ["wR","--","--","--","wK","--","--","wR"]]
+            ["wR","wN","wB","wQ","wK","wB","wN","wR"]]
         
         self.whiteKingLocation = (7,4)
         self.blackKingLocation = (0,4)
@@ -171,7 +171,7 @@ class GameState():
             moves = self.getAllPossibleMoves()
 
         return moves
-    
+
     def checkForPinsAndChecks(self):
         pins = []
         checks = []
@@ -238,13 +238,14 @@ class GameState():
         
         return inCheck, pins, checks
 
-    def getAllPossibleMoves(self): 
+    def getAllPossibleMoves(self, checkingCastling = False): 
         moves = []
         #Castling
-        if self.WhiteToMove:
-            self.getCastleMoves(self.whiteKingLocation[0], self.whiteKingLocation[1], moves)
-        else:
-            self.getCastleMoves(self.blackKingLocation[0], self.blackKingLocation[1], moves)
+        if not checkingCastling:
+            if self.WhiteToMove:
+                self.getCastleMoves(self.whiteKingLocation[0], self.whiteKingLocation[1], moves)
+            else:
+                self.getCastleMoves(self.blackKingLocation[0], self.blackKingLocation[1], moves)
             
         for row in range(len(self.board)):
             for col in range(len(self.board[row])):
@@ -437,6 +438,15 @@ class GameState():
                     break
 
 
+    def squareUnderAttack(self,row,col):
+        self.WhiteToMove = not self.WhiteToMove             #Tura przeciwnika
+        oppMoves = self.getAllPossibleMoves(checkingCastling=True)
+        self.WhiteToMove = not self.WhiteToMove             #Odwracamy z powrotem
+        for move in oppMoves:
+            if move.endRow == row and move.endCol == col:   #Pole pod ostrzałem                                
+                return True
+        return False
+
     def getCastleMoves(self,row,col,moves):
         if (self.WhiteToMove and self.currentCastlingRight.wKs) or (not self.WhiteToMove and self.currentCastlingRight.bKs):
             self.getKingSideCastleMoves(row,col,moves)
@@ -446,11 +456,13 @@ class GameState():
     def getKingSideCastleMoves(self,row,col,moves):
         # print(self.board[row][col+1],self.board[row][col+2])
         if self.board[row][col+1] == '--' and self.board[row][col+2] == '--':
-            moves.append(Move((row,col), (row,col+2), self.board, isCastleMove=True))
+            if not self.squareUnderAttack(row,col+1) and not self.squareUnderAttack(row,col+2):
+                moves.append(Move((row,col), (row,col+2), self.board, isCastleMove=True))
 
     def getQueenSideCastleMoves(self,row,col,moves):
         if self.board[row][col-1] == '--' and self.board[row][col-2] == '--' and self.board[row][col-3] == '--':
-            moves.append(Move((row,col), (row,col-2), self.board, isCastleMove=True))
+            if not self.squareUnderAttack(row,col-1) and not self.squareUnderAttack(row,col-2) and not self.squareUnderAttack(row,col-3):
+                moves.append(Move((row,col), (row,col-2), self.board, isCastleMove=True))
 
 
 

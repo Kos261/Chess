@@ -69,9 +69,9 @@ class GameState():
         self.updateCastleRights(move)
         self.castleRightsLog.append(CastleRights(self.currentCastlingRight.wKs,self.currentCastlingRight.bKs,
                                              self.currentCastlingRight.wQs,self.currentCastlingRight.bQs))
-        for log in self.castleRightsLog:
-            print(log.wKs,log.wQs,log.bKs,log.bQs, end = ', ')
-            print()
+        # for log in self.castleRightsLog:
+        #     print(log.wKs,log.wQs,log.bKs,log.bQs, end = ', ')
+        #     print()
 
     def undoMove(self):
         if len(self.moveLog) != 0:

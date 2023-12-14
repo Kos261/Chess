@@ -13,6 +13,17 @@ class GameState():
             ["wp","wp","wp","wp","wp","wp","wp","wp"],
             ["wR","wN","wB","wQ","wK","wB","wN","wR"]]
         
+        # self.board = [
+        #     ["--","--","--","--","--","--","--","--"],
+        #     ["--","--","--","--","--","--","--","--"],
+        #     ["--","--","--","--","--","--","--","--"],
+        #     ["--","--","--","--","--","--","--","--"],
+        #     ["--","--","--","--","--","--","--","--"],
+        #     ["--","--","--","--","--","--","--","--"],
+        #     ["--","--","--","--","--","--","--","--"],
+        #     ["--","--","--","--","--","--","--","--"]]
+
+        
         self.whiteKingLocation = (7,4)
         self.blackKingLocation = (0,4)
         self.moveLog = []
@@ -30,7 +41,7 @@ class GameState():
         self.castleRightsLog = [CastleRights(self.currentCastlingRight.wKs,self.currentCastlingRight.bKs,
                                              self.currentCastlingRight.wQs,self.currentCastlingRight.bQs)]
             
-    def makeMove(self, move):
+    def makeMove(self, move, AIPlaying = False):
         #To bierze ruch jako parameter (nie działa dla roszady i en-passante)
         self.board[move.startRow][move.startCol] = "--"
         self.board[move.endRow][move.endCol] = move.pieceMoved
@@ -41,11 +52,33 @@ class GameState():
                 self.blackKingLocation = (move.endRow, move.endCol)
             if move.pieceMoved[0] == 'w':
                 self.whiteKingLocation = (move.endRow, move.endCol)
+        
 
+
+        
+        #########POPRAWIĆ###############
         #pawn promotion
         if move.pawnPromotion:
-            promotedPiece = input("Promote to Q, R, B or N: ")          #Tu można zdebugować potem
-            self.board[move.endRow][move.endCol] = move.pieceMoved[0] + promotedPiece
+
+            if not AIPlaying:
+                while True:
+                    promotedPiece = input("Promote to Q, R, B or N: ") .upper()
+                    if promotedPiece in ['Q','R','B','N']:
+                        break
+                    else:
+                        print("Error! give proper letter for figure")
+                self.board[move.endRow][move.endCol] = move.pieceMoved[0] + promotedPiece
+
+            elif AIPlaying:
+                self.board[move.endRow][move.endCol] = move.pieceMoved[0] + 'Q'
+            
+            
+
+        #########POPRAWIĆ###############
+
+
+
+
 
         #en passante
         if move.isEnPassantMove:
@@ -53,7 +86,7 @@ class GameState():
 
         #updating enpassant square location
         if move.pieceMoved[1] == 'p' and abs(move.startRow - move.endRow) == 2:
-            self.enpassantPossible = ((move.startRow + move.endRow)//2,move.endCol)   #Pole pomiędzy jest enpassant
+            self.enpassantPossible = ((move.startRow + move.endRow)//2,move.endCol)   #Square beetwen is enpassant
         else:
             self.enpassantPossible = ()
 
@@ -104,6 +137,9 @@ class GameState():
                 else: #Queen side castle
                     self.board[move.endRow][move.endCol-2] = self.board[move.endRow][move.endCol+1]
                     self.board[move.endRow][move.endCol+1] = '--'
+
+            self.checkMate = False
+            self.staleMate = False
 
     def updateCastleRights(self,move):
 
@@ -170,6 +206,15 @@ class GameState():
         else:
             moves = self.getAllPossibleMoves()
 
+        # Win condintion
+        if len(moves) == 0:
+            if self.inCheck:
+                self.checkMate = True
+            else:
+                self.staleMate = True
+        else:
+            self.checkMate = False
+            self.staleMate = False
         return moves
 
     def checkForPinsAndChecks(self):
@@ -508,7 +553,6 @@ class Move():
     def getRankFile(self,row,col):
         return self.colsToFiles[col]+self.rowsToRanks[row]
     
-
 
 class CastleRights():
     def __init__(self,wKs,bKs,wQs,bQs):

@@ -1,6 +1,6 @@
 #Ta klasa odpowiada za user input i za grę
 import pygame as p
-import ChessEngine_Advanced,ChessEngine_Naive
+import ChessEngine_Advanced,ChessEngine_Naive, SmartMoveFinder
 
 WIDTH = HEIGHT = 512
 DIMENSION = 8
@@ -86,8 +86,6 @@ def animateMove(move, screen, board, clock):
         p.display.flip()
         clock.tick(60)
 
-
-
 def drawText(screen, text):
     font = p.font.SysFont("Helvetica", 32 , True, False)
     textObject = font.render(text, 0, p.Color("Gray"))
@@ -96,6 +94,9 @@ def drawText(screen, text):
     textObject = font.render(text, 0, p.Color("Black"))
     screen.blit(textObject,textLocation.move(2,2))
 
+
+def drawPawnPromotion(screen):
+    pass
 
 def main(): 
     p.init()
@@ -111,13 +112,18 @@ def main():
     sqSelected = ()             #Na razie żaden nie jest wybrany. Zapamiętuje ostatnie kliknięcie (tuple: (row,col))
     playerClicks = []           #Zapamiętuje kliknięcia (2 tuples np: (6,4),(4,4))
     gameOver = False
+    playerOne = True            #If player is playing or AI
+    playerTwo = False
+
+
     while running:
+        humanTurn = (gs.WhiteToMove and playerOne) or (not gs.WhiteToMove and playerTwo)
         for e in p.event.get():
             if e.type == p.QUIT:
                 running = False
             #Obsługa myszki
             elif e.type == p.MOUSEBUTTONDOWN:
-                if not gameOver:
+                if not gameOver and humanTurn:
                     location = p.mouse.get_pos() #(x,y) myszki
                     col = location[0]//SQ_SIZE
                     row = location[1]//SQ_SIZE
@@ -157,6 +163,14 @@ def main():
                     animate = False
                     gameOver = False
 
+        # AI logic
+        if not gameOver and not humanTurn:
+            AIMove = SmartMoveFinder.minMaxRecursiveCaller_(gs, validMoves,3,gs.WhiteToMove)
+            if AIMove is None:
+                AIMove = SmartMoveFinder.findRandomMove(validMoves)
+            gs.makeMove(AIMove,AIPlaying=True)
+            moveMade = True
+            animate = True
 
         if moveMade:
             if animate:
@@ -171,15 +185,13 @@ def main():
             gameOver = True
             if gs.WhiteToMove:
                 drawText(screen, 'Black wins by checkmate')
-                print("Black wins by checkmate")
             else:
                 drawText(screen, 'White wins by checkmate')
-                print('White wins by checkmate')
-
+                
         elif gs.staleMate:
             gameOver = True
             drawText(screen, 'Stalemate')
-            print("Stalemate")
+            
 
         clock.tick(MAX_FPS)
         p.display.flip()

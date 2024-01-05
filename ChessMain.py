@@ -1,10 +1,14 @@
 #Ta klasa odpowiada za user input i za grę
 import pygame as p
 import ChessEngine_Advanced,ChessEngine_Naive, SmartMoveFinder
+import random
+from multiprocessing import Process, Queue
 
-WIDTH = HEIGHT = 512
+BOARD_WIDTH = BOARD_HEIGHT = 512
+MOVE_LOG_PANEL_WIDTH = 200
+MOVE_LOG_PANEL_HEIGHT = BOARD_HEIGHT
 DIMENSION = 8
-SQ_SIZE = HEIGHT//DIMENSION
+SQ_SIZE = BOARD_HEIGHT//DIMENSION
 MAX_FPS = 15
 IMAGES = {}
 
@@ -14,11 +18,12 @@ def loadImages():
         #Figury od razu w skali planszy
         IMAGES[piece] = p.transform.scale(p.image.load("Figury/" + piece + ".png"),(SQ_SIZE,SQ_SIZE))
 
-def drawGameState(screen,gs,validMoves,sqSelected):
+def drawGameState(screen,gs,validMoves,sqSelected, moveLogFont):
     #drawGameState odpowiada za całą grafikę w obecnym stanie gry
     drawBoard(screen)
     highlightSquares(screen, gs, validMoves, sqSelected)
     drawPieces(screen,gs.board)
+    drawMoveLog(screen, gs, moveLogFont)
 
 def drawBoard(screen):
     #Rysowanie planszy
@@ -30,6 +35,11 @@ def drawBoard(screen):
             p.draw.rect(screen,color, p.Rect(col*SQ_SIZE,row*SQ_SIZE,SQ_SIZE,SQ_SIZE))
 
      # Dodawanie liter do lewej krawędzi
+            
+
+
+
+            #TRZEBA ZAMIENIĆ LITERY Z CYFRAMUI
     letters = ['h', 'g', 'f', 'e', 'd', 'c', 'b', 'a']
     font = p.font.Font(None, 36)
     for i in range(DIMENSION):
@@ -49,6 +59,23 @@ def drawPieces(screen,board):
             piece = board[row][col]
             if piece != "--": #Nie jest puste pole
                 screen.blit(IMAGES[piece], p.Rect(col*SQ_SIZE,row*SQ_SIZE,SQ_SIZE,SQ_SIZE))
+
+def drawMoveLog(screen, gs, font):
+    
+    moveLogRect = p.Rect(BOARD_WIDTH, 0, MOVE_LOG_PANEL_WIDTH, MOVE_LOG_PANEL_HEIGHT)
+    p.draw.rect(screen, p.Color('black'), moveLogRect)
+    moveLog = gs.moveLog
+    moveTexts = moveLog #LAter change
+    padding = 20
+    textY = padding
+    line_spacing = 2 
+
+    for i in range(len(moveTexts)):
+        text = f"{i+1}. " + str(moveTexts[i])
+        textObject = font.render(text, True, p.Color("white"))
+        textLocation = moveLogRect.move(padding, textY)
+        screen.blit(textObject,textLocation)
+        textY += textObject.get_height() + line_spacing
 
 def highlightSquares(screen, gs, validMoves, sqSelected):
     if sqSelected != ():
@@ -86,25 +113,28 @@ def animateMove(move, screen, board, clock):
         p.display.flip()
         clock.tick(60)
 
-def drawText(screen, text):
+def drawEndGameText(screen, text):
     font = p.font.SysFont("Helvetica", 32 , True, False)
     textObject = font.render(text, 0, p.Color("Gray"))
-    textLocation = p.Rect(0, 0, WIDTH, HEIGHT).move(WIDTH/2 - textObject.get_width()/2, HEIGHT/2 - textObject.get_height()/2)
+    textLocation = p.Rect(0, 0, BOARD_WIDTH, BOARD_HEIGHT).move(BOARD_WIDTH/2 - textObject.get_BOARD_WIDTH()/2, BOARD_HEIGHT/2 - textObject.get_BOARD_HEIGHT()/2)
     screen.blit(textObject,textLocation)
     textObject = font.render(text, 0, p.Color("Black"))
     screen.blit(textObject,textLocation.move(2,2))
 
-
 def drawPawnPromotion(screen):
     pass
 
+
+
 def main(): 
     p.init()
-    screen = p.display.set_mode((WIDTH,HEIGHT)) 
+    screen = p.display.set_mode((BOARD_WIDTH + MOVE_LOG_PANEL_WIDTH, BOARD_HEIGHT)) 
     screen.fill(p.Color("White"))
+    moveLogFont = p.font.SysFont("Helvetica", 20, False, False)
     clock = p.time.Clock()
     gs = ChessEngine_Advanced.GameState()
     validMoves = gs.getValidMoves()
+    random.shuffle(validMoves)
     moveMade = False            
     animate = False
     loadImages()
@@ -112,9 +142,11 @@ def main():
     sqSelected = ()             #Na razie żaden nie jest wybrany. Zapamiętuje ostatnie kliknięcie (tuple: (row,col))
     playerClicks = []           #Zapamiętuje kliknięcia (2 tuples np: (6,4),(4,4))
     gameOver = False
-    playerOne = True            #If player is playing or AI
+    playerOne = True          #If player is playing or AI
     playerTwo = False
-
+    AIThinking = False
+    moveFinderProcess = None
+    moveUndone = False
 
     while running:
         humanTurn = (gs.WhiteToMove and playerOne) or (not gs.WhiteToMove and playerTwo)
@@ -123,17 +155,17 @@ def main():
                 running = False
             #Obsługa myszki
             elif e.type == p.MOUSEBUTTONDOWN:
-                if not gameOver and humanTurn:
+                if not gameOver:
                     location = p.mouse.get_pos() #(x,y) myszki
                     col = location[0]//SQ_SIZE
                     row = location[1]//SQ_SIZE
-                    if sqSelected == (row,col):  #Gracz wybrał to samo pole 2 razy
+                    if sqSelected == (row,col) or col >= 8:  #Gracz wybrał to samo pole 2 razy
                         sqSelected = ()          #deselect
                         playerClicks = []        #wyczyszczenie pamięci kliknięć
                     else:
                         sqSelected = (row,col)
                         playerClicks.append(sqSelected)
-                    if len(playerClicks)==2:
+                    if len(playerClicks) == 2 and humanTurn:
                         move = ChessEngine_Advanced.Move(playerClicks[0],playerClicks[1],gs.board)
                         
                         for i in range(len(validMoves)):
@@ -151,46 +183,70 @@ def main():
 
                 if e.key == p.K_z:
                     gs.undoMove()   #Undo move
+                    sqSelected = ()
+                    playerClicks = []
+                    gameOver = False
                     moveMade = True
                     animate = False
+                    if AIThinking:
+                        moveFinderProcess.terminate()
+                        AIThinking = False
+                    moveUndone = True
 
                 if e.key == p.K_r:  #Reset game
                     gs = ChessEngine_Advanced.GameState()
                     validMoves = gs.getValidMoves()
                     sqSelected = ()
                     playerClicks = []
-                    moveMade = False
-                    animate = False
                     gameOver = False
+                    moveMade = True
+                    animate = False
+                    if AIThinking:
+                        moveFinderProcess.terminate()
+                        AIThinking = False
+                    moveUndone = True
+
 
         # AI logic
-        if not gameOver and not humanTurn:
-            AIMove = SmartMoveFinder.minMaxRecursiveCaller_(gs, validMoves,3,gs.WhiteToMove)
-            if AIMove is None:
-                AIMove = SmartMoveFinder.findRandomMove(validMoves)
-            gs.makeMove(AIMove,AIPlaying=True)
-            moveMade = True
-            animate = True
+        if not gameOver and not humanTurn and not moveUndone:
+            if not AIThinking:
+                AIThinking = True
+                print("Thinking...")
+                returnQueue = Queue()   #Used to pass data between threads  
+                moveFinderProcess = Process(target=SmartMoveFinder.negaMaxAlphaBetaCaller_, 
+                                            args = (gs, validMoves, returnQueue))
+                moveFinderProcess.start() #Call findBestMove(gs,validMoves,returnQueue)
+                
+            if not moveFinderProcess.is_alive():
+                print("Done thinking")
+                AIMove = returnQueue.get()
+                if AIMove is None:
+                    AIMove = SmartMoveFinder.findRandomMove(validMoves)
+                gs.makeMove(AIMove,AIPlaying=True)
+                moveMade = True
+                animate = True  
+                AIThinking = False
+
 
         if moveMade:
             if animate:
                 animateMove(gs.moveLog[-1], screen, gs.board, clock)
             validMoves = gs.getValidMoves()
+            random.shuffle(validMoves)
             moveMade = False
             animate = False
+            moveUndone = False
 
-        drawGameState(screen,gs,validMoves,sqSelected)
+        drawGameState(screen, gs, validMoves, sqSelected, moveLogFont)
 
-        if gs.checkMate:
+        if gs.checkMate or gs.staleMate:
             gameOver = True
-            if gs.WhiteToMove:
-                drawText(screen, 'Black wins by checkmate')
+            if gs.staleMate:
+                text = 'Stalemate'
             else:
-                drawText(screen, 'White wins by checkmate')
+                text = 'White wins by checkmate' if not gs.WhiteToMove else 'Black wins by checkmate'
                 
-        elif gs.staleMate:
-            gameOver = True
-            drawText(screen, 'Stalemate')
+            drawEndGameText(screen, text)
             
 
         clock.tick(MAX_FPS)

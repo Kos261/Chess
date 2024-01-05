@@ -1,9 +1,66 @@
 import random
 
 pieceScore = {"K":0, "Q":10, "R":5, "N":3, "B":3, "p":1 }
+
+knightScores = [[1,1,1,1,1,1,1,1],
+                [1,2,2,2,2,2,2,1],
+                [1,2,3,3,3,3,2,1],
+                [1,2,3,4,4,3,2,1],
+                [1,2,3,4,4,3,2,1],
+                [1,2,3,3,3,3,2,1],
+                [1,2,2,2,2,2,2,1],
+                [1,1,1,1,1,1,1,1]]
+
+bishopScores = [[4,3,2,1,1,2,3,4],
+                [3,4,3,2,2,3,4,3],
+                [2,3,4,3,3,4,3,2],
+                [1,2,3,4,4,3,2,1],
+                [1,2,3,4,4,3,2,1],
+                [2,3,4,3,3,4,3,2],
+                [3,4,3,2,2,3,4,3],
+                [4,3,2,1,1,2,3,4]]
+
+rookScores =   [[4,3,3,4,4,3,3,4],
+                [1,2,2,2,2,2,2,1],
+                [1,2,3,3,3,3,2,1],
+                [1,2,3,4,4,3,2,1],
+                [1,2,3,4,4,3,2,1],
+                [1,2,3,3,3,3,2,1],
+                [1,2,2,2,2,2,2,1],
+                [4,3,3,4,4,3,3,4]]
+
+queenScores =  [[4,4,4,4,4,4,4,4],
+                [3,4,3,2,2,3,4,3],
+                [2,3,4,3,3,4,3,2],
+                [1,2,3,4,4,3,2,1],
+                [1,2,3,4,4,3,2,1],
+                [2,3,4,3,3,4,3,2],
+                [3,4,3,2,2,3,4,3],
+                [4,4,4,4,4,4,4,4]]
+
+wPawnScores =  [[8,8,8,8,8,8,8,8],
+                [5,6,6,7,7,6,6,5],
+                [1,2,4,5,5,4,2,1],
+                [1,2,3,4,4,3,2,1],
+                [1,2,3,4,4,3,2,1],
+                [2,2,2,3,3,2,2,2],
+                [1,1,1,0,0,1,1,1],
+                [0,0,0,0,0,0,0,0]]
+
+
+bPawnScores =  [[0,0,0,0,0,0,0,0],
+                [1,1,1,0,0,1,1,1],
+                [2,2,2,3,3,2,2,2],
+                [1,2,3,4,4,3,2,1],
+                [1,2,3,4,4,3,2,1],
+                [1,2,4,5,5,4,2,1],
+                [5,6,6,7,7,6,6,5],
+                [8,8,8,8,8,8,8,8]]
+
+piecePositionScores = {"N": knightScores, "B": bishopScores, "Q": queenScores, "R": rookScores, "bp": bPawnScores, "wp": wPawnScores}
 CHECKMATE = 1000
 STALEMATE = 0
-DEPTH = 3
+DEPTH = 4
 '''
 A positive score is good for white, a negative score is good for black
 '''
@@ -21,7 +78,7 @@ def scoreMaterial(board):
 def scoreBoard(gs):
     # for example pawn protecting piece is stronger than pawn that doesn't do that
     if gs.checkMate:
-        if gs.whiteToMove:
+        if gs.WhiteToMove:
             return -CHECKMATE
         else:
             return CHECKMATE
@@ -30,12 +87,26 @@ def scoreBoard(gs):
 
 
     score = 0
-    for row in gs.board:
-        for square in row:
-            if square[0] == 'w':
-                score += pieceScore[square[1]]
-            elif square[0] == 'b':
-                score -= pieceScore[square[1]]
+    for row in range(len(gs.board)):
+        for col in range(len(gs.board[row])):
+            square = gs.board[row][col]
+            if square != '--':
+                #Score positionally
+                piecePositionScore = 0
+
+                if square[1] != 'K':
+                    if square[1] == 'p':
+                        piecePositionScore = piecePositionScores[square][row][col] 
+                    else:
+                        piecePositionScore = piecePositionScores[square[1]][row][col] 
+
+
+
+                if square[0] == 'w':
+                    score += pieceScore[square[1]] + piecePositionScore * 0.5
+
+                elif square[0] == 'b':
+                    score -= pieceScore[square[1]] + piecePositionScore * 0.5
     return score
 
 
@@ -67,7 +138,6 @@ def minMaxAlgorithm2depth(gs, validMoves):
     turnMultiplier = 1 if gs.WhiteToMove else -1
     opponentMinMaxScore = CHECKMATE
     bestPlayerMove = None
-    random.shuffle(validMoves)
     
     for playerMove in validMoves:
         gs.makeMove(playerMove)
@@ -103,7 +173,7 @@ def minMaxAlgorithm2depth(gs, validMoves):
 
 
 #Helper method to make first recursive call
-def minMaxRecursiveCaller_(gs, validMoves, depth, whiteToMove):
+def minMaxRecursiveCaller_(gs, validMoves):
     global nextMove
     nextMove = None
     minMaxRecursive(gs, validMoves, DEPTH, gs.WhiteToMove)
@@ -113,8 +183,6 @@ def minMaxRecursive(gs, validMoves, depth, whiteToMove):
     global nextMove
     if depth == 0:
         return scoreMaterial(gs.board) #ScoreBoard?
-    
-    random.shuffle(validMoves)
     
     if whiteToMove:
         maxScore = -CHECKMATE
@@ -141,5 +209,73 @@ def minMaxRecursive(gs, validMoves, depth, whiteToMove):
                     nextMove = move
             gs.undoMove()
     return minScore
+
+
+
+#Helper method to make first recursive call
+def negaMaxCaller_(gs, validMoves):
+    global nextMove, counter
+    counter = 0
+    nextMove = None
+    negaMax(gs, validMoves, DEPTH, 1 if gs.WhiteToMove else -1)
+    print("Simulated moves:", counter)
+    counter = 0
+    return nextMove
+
+def negaMax(gs, validMoves, depth, turnMultiplier):
+    global nextMove, counter
+    counter += 1
+    if depth == 0:
+        return turnMultiplier * scoreBoard(gs) 
+
+    maxScore = -CHECKMATE
+    for move in validMoves:
+        gs.makeMove(move)
+        nextMoves = gs.getValidMoves()
+        score = -negaMax(gs, nextMoves, depth-1, -turnMultiplier)
+        if score > maxScore:
+            maxScore = score
+            if depth == DEPTH:
+                nextMove = move
+        gs.undoMove()
+    return maxScore
+
+
+
+#Helper method to make first recursive call
+def negaMaxAlphaBetaCaller_(gs, validMoves, returnQueue):
+    global nextMove, counter
+    counter = 0
+    nextMove = None
+    negaMaxAlphaBeta(gs, validMoves, DEPTH, -CHECKMATE, CHECKMATE, 1 if gs.WhiteToMove else -1)
+    print("Simulated moves:", counter)
+    counter = 0
+    returnQueue.put(nextMove)
+
+def negaMaxAlphaBeta(gs, validMoves, depth, alpha, beta, turnMultiplier):
+    global nextMove, counter
+    counter += 1
+    if depth == 0:
+        return turnMultiplier * scoreBoard(gs) 
+
+    maxScore = -CHECKMATE
+    for move in validMoves:
+        gs.makeMove(move)
+        nextMoves = gs.getValidMoves()
+        score = -negaMaxAlphaBeta(gs, nextMoves, depth-1, -beta, -alpha, -turnMultiplier)
+        if score > maxScore:
+            maxScore = score
+            if depth == DEPTH:
+                nextMove = move
+                print(move,score)
+        gs.undoMove()
+
+        #Pruning useless moves
+        if maxScore > alpha:
+            alpha = maxScore
+        if alpha >= beta:
+            break
+
+    return maxScore
 
 

@@ -10,12 +10,11 @@ import time
 import os
 import shutil
 
-from PyQt5 import QtCore,QtWidgets
+
 from PyQt5.QtCore import QDir, Qt, QCoreApplication
-from PyQt5.QtGui import QIcon,QFont
-from PyQt5.QtWidgets import QApplication, QMainWindow, QPushButton, QFileDialog, QVBoxLayout, QWidget, QLabel, QHBoxLayout
-from PyQt5.QtWidgets import QApplication, QMainWindow, QPushButton, QMessageBox, QTextEdit,QStyleFactory
-from PyQt5.QtGui import QPalette, QColor
+from PyQt5.QtGui import QIcon, QFont, QPalette, QColor, QPainter
+from PyQt5.QtWidgets import QApplication, QMainWindow, QPushButton, QFileDialog, QVBoxLayout, QWidget, QLabel, QHBoxLayout, QMessageBox, QTextEdit, QStyleFactory
+
 
 BOARD_WIDTH = BOARD_HEIGHT = 512
 MOVE_LOG_PANEL_WIDTH = 200
@@ -182,7 +181,7 @@ def main():
                         
                         for i in range(len(validMoves)):
                             if move == validMoves[i]:
-                                #print(move.getChessNotation())
+                                # print(move.getChessNotation())
                                 gs.makeMove(validMoves[i])
                                 moveMade = True
                                 animate = True
@@ -264,6 +263,12 @@ def main():
         clock.tick(MAX_FPS)
         p.display.flip()
 
+
+
+
+class ChessGraphicsQT(QWidget):
+    def __init__(self):
+        super().__init__()
 
 
 

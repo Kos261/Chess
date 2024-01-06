@@ -3,25 +3,25 @@
 class GameState():
     def __init__(self):
         #Pierwsza litera kolor, druga rodzaj R-rook, N-knight, B-bishop, Q-queen, K-king "--" puste
-        self.board = [
-            ["bR","bN","bB","bQ","bK","bB","bN","bR"],
-            ["bp","bp","bp","bp","bp","bp","bp","bp"],
-            ["--","--","--","--","--","--","--","--"],
-            ["--","--","--","--","--","--","--","--"],
-            ["--","--","--","--","--","--","--","--"],
-            ["--","--","--","--","--","--","--","--"],
-            ["wp","wp","wp","wp","wp","wp","wp","wp"],
-            ["wR","wN","wB","wQ","wK","wB","wN","wR"]]
-        
         # self.board = [
+        #     ["bR","bN","bB","bQ","bK","bB","bN","bR"],
+        #     ["bp","bp","bp","bp","bp","bp","bp","bp"],
         #     ["--","--","--","--","--","--","--","--"],
         #     ["--","--","--","--","--","--","--","--"],
         #     ["--","--","--","--","--","--","--","--"],
         #     ["--","--","--","--","--","--","--","--"],
-        #     ["--","--","--","--","--","--","--","--"],
-        #     ["--","--","--","--","--","--","--","--"],
-        #     ["--","--","--","--","--","--","--","--"],
-        #     ["--","--","--","--","--","--","--","--"]]
+        #     ["wp","wp","wp","wp","wp","wp","wp","wp"],
+        #     ["wR","wN","wB","wQ","wK","wB","wN","wR"]]
+        
+        self.board = [
+            ["--","--","--","--","--","--","--","bK"],
+            ["--","--","--","--","bp","--","--","--"],
+            ["--","--","bR","--","--","--","--","--"],
+            ["--","--","--","wK","bp","--","--","--"],
+            ["--","--","--","--","--","--","--","--"],
+            ["--","--","--","--","--","--","--","--"],
+            ["--","--","--","--","--","--","--","--"],
+            ["--","--","--","--","--","--","--","--"]]
 
         
         self.whiteKingLocation = (7,4)
@@ -63,11 +63,14 @@ class GameState():
 
             if not AIPlaying:
                 while True:
-                    promotedPiece = input("Promote to Q, R, B or N: ") .upper()
-                    if promotedPiece in ['Q','R','B','N']:
-                        break
-                    else:
-                        print("Error! give proper letter for figure")
+                    try:
+                        promotedPiece = str(input("Promote to Q, R, B or N: ") .upper())
+                        if promotedPiece in ['Q','R','B','N']:
+                            break
+                        else:
+                            print("Error! give proper letter for figure")
+                    except ValueError:
+                        print("Wprowadzono zły znak")
                 self.board[move.endRow][move.endCol] = move.pieceMoved[0] + promotedPiece
 
             elif AIPlaying:
@@ -285,6 +288,7 @@ class GameState():
                             break
                 else:   #poza planszą
                     break
+
         knightMoves = ((-1,-2),(-2,-1),(-2,1),(1,-2),(-1,2),(2,-1),(2,1),(1,2))
         for move in knightMoves:
             endRow = startRow + move[0]
@@ -347,6 +351,9 @@ class GameState():
                 moves.append(Move((row,col),(row+moveAmount,col),self.board, pawnPromotion = pawnPromotion))
                 if row == startRow and self.board[row+2*moveAmount][col] == '--':
                     moves.append(Move((row,col),(row+2*moveAmount,col),self.board))
+
+
+
         if col-1 >= 0:
             if not piecePinned or pinDirection == (moveAmount,-1):
                 if self.board[row+moveAmount][col-1][0] == enemyColor:

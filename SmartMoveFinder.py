@@ -119,7 +119,7 @@ def greedyAlgorithm(gs, validMoves):
     maxScore = -CHECKMATE
 
     for playerMove in validMoves:
-        gs.makeMove(playerMove)
+        gs.makeMove(playerMove, AIPlaying = True)
         if gs.checkMate:
             score = CHECKMATE
         elif gs.staleMate:
@@ -140,7 +140,7 @@ def minMaxAlgorithm2depth(gs, validMoves):
     bestPlayerMove = None
     
     for playerMove in validMoves:
-        gs.makeMove(playerMove)
+        gs.makeMove(playerMove, AIPlaying = True)
         opponentMoves = gs.getValidMoves()
         if gs.staleMate:
             opponentMaxScore = STALEMATE
@@ -151,7 +151,7 @@ def minMaxAlgorithm2depth(gs, validMoves):
         else:
             opponentMaxScore = -CHECKMATE
             for opponentMove in opponentMoves:
-                gs.makeMove(opponentMove)
+                gs.makeMove(opponentMove, AIPlaying = True)
                 gs.getValidMoves()
 
                 if gs.checkMate:
@@ -187,7 +187,7 @@ def minMaxRecursive(gs, validMoves, depth, whiteToMove):
     if whiteToMove:
         maxScore = -CHECKMATE
         for move in validMoves:
-            gs.makeMove(move)
+            gs.makeMove(move, AIPlaying = True)
             nextMoves = gs.getValidMoves()
             score = minMaxRecursive(gs, nextMoves, depth-1, False)
             if score > maxScore:
@@ -200,7 +200,7 @@ def minMaxRecursive(gs, validMoves, depth, whiteToMove):
     else:
         minScore = CHECKMATE
         for move in validMoves:
-            gs.makeMove(move)
+            gs.makeMove(move, AIPlaying = True)
             nextMoves = gs.getValidMoves()
             score = minMaxRecursive(gs, nextMoves, depth-1, True)
             if score < minScore:
@@ -230,7 +230,7 @@ def negaMax(gs, validMoves, depth, turnMultiplier):
 
     maxScore = -CHECKMATE
     for move in validMoves:
-        gs.makeMove(move)
+        gs.makeMove(move, AIPlaying = True)
         nextMoves = gs.getValidMoves()
         score = -negaMax(gs, nextMoves, depth-1, -turnMultiplier)
         if score > maxScore:
@@ -260,14 +260,14 @@ def negaMaxAlphaBeta(gs, validMoves, depth, alpha, beta, turnMultiplier):
 
     maxScore = -CHECKMATE
     for move in validMoves:
-        gs.makeMove(move)
+        gs.makeMove(move, AIPlaying = True)
         nextMoves = gs.getValidMoves()
         score = -negaMaxAlphaBeta(gs, nextMoves, depth-1, -beta, -alpha, -turnMultiplier)
         if score > maxScore:
             maxScore = score
             if depth == DEPTH:
                 nextMove = move
-                print(move,score)
+                #print(move,score)
         gs.undoMove()
 
         #Pruning useless moves

@@ -3,25 +3,25 @@
 class GameState():
     def __init__(self):
         #Pierwsza litera kolor, druga rodzaj R-rook, N-knight, B-bishop, Q-queen, K-king "--" puste
-        # self.board = [
-        #     ["bR","bN","bB","bQ","bK","bB","bN","bR"],
-        #     ["bp","bp","bp","bp","bp","bp","bp","bp"],
-        #     ["--","--","--","--","--","--","--","--"],
-        #     ["--","--","--","--","--","--","--","--"],
-        #     ["--","--","--","--","--","--","--","--"],
-        #     ["--","--","--","--","--","--","--","--"],
-        #     ["wp","wp","wp","wp","wp","wp","wp","wp"],
-        #     ["wR","wN","wB","wQ","wK","wB","wN","wR"]]
-        
         self.board = [
-            ["--","--","--","--","--","--","--","bK"],
-            ["--","--","--","--","bp","--","--","--"],
-            ["--","--","bR","--","--","--","--","--"],
-            ["--","--","--","wK","bp","--","--","--"],
+            ["bR","bN","bB","bQ","bK","bB","bN","bR"],
+            ["bp","bp","bp","bp","bp","bp","bp","bp"],
             ["--","--","--","--","--","--","--","--"],
             ["--","--","--","--","--","--","--","--"],
             ["--","--","--","--","--","--","--","--"],
-            ["--","--","--","--","--","--","--","--"]]
+            ["--","--","--","--","--","--","--","--"],
+            ["wp","wp","wp","wp","wp","wp","wp","wp"],
+            ["wR","wN","wB","wQ","wK","wB","wN","wR"]]
+        
+        # self.board = [
+        #     ["--","--","--","--","--","--","--","bK"],
+        #     ["--","--","--","--","--","--","--","--"],
+        #     ["--","--","--","--","--","--","--","--"],
+        #     ["--","--","--","wK","bp","--","--","--"],
+        #     ["--","--","--","--","--","--","--","--"],
+        #     ["--","--","--","--","--","--","--","--"],
+        #     ["--","--","--","--","--","--","--","--"],
+        #     ["--","--","--","--","--","--","--","--"]]
 
         
         self.whiteKingLocation = (7,4)
@@ -318,6 +318,16 @@ class GameState():
                     self.moveFunctions[piece](row, col, moves)  #wywołanie odpowiedniej funkcji dla figury
         return moves
 
+    def scanBoard(self):
+        figs = []
+        for row in range(len(self.board)):
+            for col in range(len(self.board[row])):
+                square = self.board[row][col]
+                if square != '--':
+                    figs.append(square)
+        if len(figs) == 2:
+            self.staleMate = True
+
 
     def getPawnMoves(self,row,col,moves):
         piecePinned = False
@@ -580,9 +590,6 @@ class GameState():
         if self.board[row][col-1] == '--' and self.board[row][col-2] == '--' and self.board[row][col-3] == '--':
             if not self.squareUnderAttack(row,col-1) and not self.squareUnderAttack(row,col-2) and not self.squareUnderAttack(row,col-3):
                 moves.append(Move((row,col), (row,col-2), self.board, isCastleMove=True))
-
-
-
 
 
 class Move():

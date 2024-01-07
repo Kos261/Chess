@@ -4,18 +4,6 @@ import ChessEngine_Advanced,ChessEngine_Naive, SmartMoveFinder
 import random
 from multiprocessing import Process, Queue
 
-import sys
-import re
-import time
-import os
-import shutil
-
-from PyQt5 import QtCore,QtWidgets
-from PyQt5.QtCore import QDir, Qt, QCoreApplication
-from PyQt5.QtGui import QIcon,QFont
-from PyQt5.QtWidgets import QApplication, QMainWindow, QPushButton, QFileDialog, QVBoxLayout, QWidget, QLabel, QHBoxLayout
-from PyQt5.QtWidgets import QApplication, QMainWindow, QPushButton, QMessageBox, QTextEdit,QStyleFactory
-from PyQt5.QtGui import QPalette, QColor
 
 BOARD_WIDTH = BOARD_HEIGHT = 512
 MOVE_LOG_PANEL_WIDTH = 200
@@ -128,15 +116,13 @@ def animateMove(move, screen, board, clock):
 def drawEndGameText(screen, text):
     font = p.font.SysFont("Helvetica", 32 , True, False)
     textObject = font.render(text, 0, p.Color("Gray"))
-    textLocation = p.Rect(0, 0, BOARD_WIDTH, BOARD_HEIGHT).move(BOARD_WIDTH/2 - textObject.get_BOARD_WIDTH()/2, BOARD_HEIGHT/2 - textObject.get_BOARD_HEIGHT()/2)
+    textLocation = p.Rect(0, 0, BOARD_WIDTH, BOARD_HEIGHT).move(BOARD_WIDTH/2 - textObject.get_width()/2, BOARD_HEIGHT/2 - textObject.get_height()/2)
     screen.blit(textObject,textLocation)
     textObject = font.render(text, 0, p.Color("Black"))
     screen.blit(textObject,textLocation.move(2,2))
 
 def drawPawnPromotion(screen):
     pass
-
-
 
 def main(): 
     p.init()
@@ -250,7 +236,8 @@ def main():
             moveUndone = False
 
         drawGameState(screen, gs, validMoves, sqSelected, moveLogFont)
-
+        
+        gs.scanBoard()
         if gs.checkMate or gs.staleMate:
             gameOver = True
             if gs.staleMate:

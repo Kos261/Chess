@@ -47,7 +47,6 @@ wPawnScores =  [[8,8,8,8,8,8,8,8],
                 [1,1,1,0,0,1,1,1],
                 [0,0,0,0,0,0,0,0]]
 
-
 bPawnScores =  [[0,0,0,0,0,0,0,0],
                 [1,1,1,0,0,1,1,1],
                 [2,2,2,3,3,2,2,2],
@@ -58,6 +57,7 @@ bPawnScores =  [[0,0,0,0,0,0,0,0],
                 [8,8,8,8,8,8,8,8]]
 
 piecePositionScores = {"N": knightScores, "B": bishopScores, "Q": queenScores, "R": rookScores, "bp": bPawnScores, "wp": wPawnScores}
+
 CHECKMATE = 1000
 STALEMATE = 0
 DEPTH = 4
@@ -110,6 +110,7 @@ def scoreBoard(gs):
     return score
 
 
+#Simple algorithms
 def findRandomMove(validMoves):
     return validMoves[random.randint(0, len(validMoves)-1)]
 

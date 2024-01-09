@@ -328,6 +328,9 @@ class GameState():
         if len(figs) == 2:
             self.staleMate = True
 
+    def printBoard(self):
+        for row in self.board:
+            print(f"{row} \n")
 
     def getPawnMoves(self,row,col,moves):
         piecePinned = False

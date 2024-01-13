@@ -53,12 +53,7 @@ class GameState():
                 self.blackKingLocation = (move.endRow, move.endCol)
             if move.pieceMoved[0] == 'w':
                 self.whiteKingLocation = (move.endRow, move.endCol)
-        
 
-
-        
-        #########POPRAWIĆ###############
-        #pawn promotion
         if move.pawnPromotion:
 
             if not AIPlaying:
@@ -76,13 +71,6 @@ class GameState():
             elif AIPlaying:
                 self.board[move.endRow][move.endCol] = move.pieceMoved[0] + 'Q'
             
-            
-
-        #########POPRAWIĆ###############
-
-
-
-
 
         #en passante
         if move.isEnPassantMove:

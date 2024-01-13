@@ -151,6 +151,7 @@ def main():
         for e in p.event.get():
             if e.type == p.QUIT:
                 running = False
+                
             #Obsługa myszki
             elif e.type == p.MOUSEBUTTONDOWN:
                 if not gameOver:

@@ -4,13 +4,14 @@ from PyQt5.QtGui import QPainter, QPixmap, QColor
 from PyQt5.QtCore import Qt, QTimer
 from ChessEngine_Advanced import GameState, Move
 import random
+import pygame
 
 BOARD_WIDTH = BOARD_HEIGHT = 600
 MOVE_LOG_PANEL_WIDTH = 200
 MOVE_LOG_PANEL_HEIGHT = BOARD_HEIGHT
 DIMENSION = 8
 SQ_SIZE = BOARD_HEIGHT//DIMENSION
-MAX_FPS = 20
+MAX_FPS = 1
 IMAGES = {}
 
 
@@ -21,16 +22,17 @@ class ChessGraphicsQT(QWidget):
         self.gs = GameState()
         self.validMoves = self.gs.getValidMoves()
         random.shuffle(self.validMoves)
-        self.moveMade = False            
+                  
         self.animate = False
         self.sqSelected = ()
         self.playerClicks = [] 
         self.gameOver = False
-        self.playerOne = True          #If player is playing or AI
+        self.playerOne = True
         self.playerTwo = True
         self.AIThinking = False
         self.moveFinderProcess = None
         self.moveUndone = False
+        self.moveMade = False  
         self.humanTurn = (self.gs.WhiteToMove and self.playerOne) or (not self.gs.WhiteToMove and self.playerTwo)
 
         self.timer = QTimer(self)
@@ -47,20 +49,7 @@ class ChessGraphicsQT(QWidget):
             label.setPixmap(pixmap)
             IMAGES[piece] = label
 
-    def drawGameState(self):
-        # drawGameState odpowiada za całą grafikę w obecnym stanie gry
-        self.painter = QPainter(self)
-        self.painter.setRenderHint(QPainter.Antialiasing)
-
-        # self.drawBoard()
-        # highlightSquares(screen, gs, validMoves, sqSelected)
-        # drawPieces(screen,gs.board)
-        # drawMoveLog(screen, gs, moveLogFont)
-
-    def paintEvent(self,event):
-        self.painter = QPainter(self)
-        self.painter.setRenderHint(QPainter.Antialiasing)
-
+    def drawBoard(self):
         global colors
         colors = [QColor(150,150,150), QColor(50,50,50)]
 
@@ -77,50 +66,131 @@ class ChessGraphicsQT(QWidget):
                 if piece != "--": #Nie jest puste pole
                     pixmap = IMAGES[piece].pixmap()
                     self.painter.drawPixmap(col*SQ_SIZE, row*SQ_SIZE, SQ_SIZE, SQ_SIZE, pixmap)
-        self.painter.end()
 
     def updateGameState(self):
-        self.update()  # Wywołuje paintEvent i odświeża widok
-        
-    
-    def keyPressEvent(self, event):
-        if event.isAccepted():
-            print("Zdarzenie zostało zaakceptowane.")
+        print(self.sqSelected,self.playerClicks)
+        if self.moveMade:
+            self.moveMade = False
+            self.animate = False
+            self.moveUndone = False
+            print(self.sqSelected,self.playerClicks)
+            self.sqSelected = ()         
+            self.playerClicks = []      #TO DODAŁEM TERAZ  
+                    
+        self.gs.scanBoard()
+
+        if self.gs.checkMate or self.gs.staleMate:
+            self.gameOver = True
+            if self.gs.staleMate:
+                text = 'Stalemate'
+            else:
+                text = 'White wins by checkmate' if not self.gs.WhiteToMove else 'Black wins by checkmate'
+            print(text)
+        self.update() 
+
+    def paintEvent(self,event):
+        self.painter = QPainter(self)
+        self.painter.setRenderHint(QPainter.Antialiasing)
+        if self.animate:
+            self.animateMove()
         else:
-            print("Zdarzenie nie zostało zaakceptowane.")
-        print(f"Naciśnięto klawisz: {event.text()}")
+            self.drawBoard()
+        self.painter.end()
+
+    def animateMove(self):
+        #DO POPRAWY
+        global colors
+        dRow = self.move.endRow - self.move.startRow
+        dCol = self.move.endCol - self.move.startCol
+        endRow = self.move.endRow * SQ_SIZE
+        endCol = self.move.endCol * SQ_SIZE
+
+        framesPerSquare = 10
+        frameCount = (abs(dRow) + abs(dCol)) * framesPerSquare
+        pixPieceMoving = IMAGES[self.move.pieceMoved].pixmap()
+
+        for frame in range(frameCount + 1):
+            row, col = (self.move.startRow + dRow * frame / frameCount, self.move.startCol + dCol * frame / frameCount)
+
+            # Clear previous frame
+            
+
+            # Erase the piece moved from its ending square
+            color = colors[(self.move.endRow + self.move.endCol) % 2]
+            self.painter.fillRect(self.move.endCol * SQ_SIZE, self.move.endRow * SQ_SIZE, SQ_SIZE, SQ_SIZE, color)
+
+            # Draw captured piece
+            if self.move.pieceCaptured != '--' and not self.move.isEnPassantMove:
+                pixPieceCaptured = IMAGES[self.move.pieceCaptured].pixmap()
+                self.painter.drawPixmap(endCol, endRow, SQ_SIZE, SQ_SIZE, pixPieceCaptured)
+
+            # Draw moving piece 
+            self.painter.drawPixmap(col * SQ_SIZE, row * SQ_SIZE, SQ_SIZE, SQ_SIZE, pixPieceMoving)
+            self.update()
+            # Update the widget
+        self.painter.end()
+
+    def keyPressEvent(self, event):
+        if event.key() == Qt.Key_Z:
+            self.gs.undoMove()   #Undo move
+            self.sqSelected = ()
+            self.playerClicks = []
+            self.gameOver = False
+            self.moveMade = True
+            self.animate = False
+            # if AIThinking:
+            #     moveFinderProcess.terminate()
+            # AIThinking = False
+            self.moveUndone = True
+            self.validMoves = self.gs.getValidMoves()
+
+        if event.key() == Qt.Key_R:  #Reset game
+                    self.gs = GameState()
+                    self.validMoves = self.gs.getValidMoves()
+                    self.sqSelected = ()
+                    self.playerClicks = []
+                    self.gameOver = False
+                    self.moveMade = True
+                    self.animate = False
+                    # if AIThinking:
+                    #     moveFinderProcess.terminate()
+                    #     AIThinking = False
+                    self.moveUndone = True
                
     def mousePressEvent(self, event):
-        if event.button() == Qt.LeftButton:
+        if event.button() == Qt.LeftButton: 
             if not self.gameOver:
-                col = event.pos().x()//SQ_SIZE
-                row = event.pos().y()//SQ_SIZE
-                print(f"Lokalizacja kursora myszy: {col}, {row}")
-                if self.sqSelected == (row,col) or col >= 8:  #Gracz wybrał to samo pole 2 razy
-                    self.sqSelected = ()          #deselect
+                col = event.pos().x() // SQ_SIZE
+                row = event.pos().y() // SQ_SIZE
+
+                if self.sqSelected == (row, col) or col >= 8:
+                    # Gracz wybrał to samo pole 2 razy
+                    self.sqSelected = ()  # deselect
                     self.playerClicks = []
                 else:
-                    self.sqSelected = (row,col)
+                    self.sqSelected = (row, col)
                     self.playerClicks.append(self.sqSelected)
+                                        
+                                        #TU ZMIENIŁEM ==
                 if len(self.playerClicks) == 2 and self.humanTurn:
-                    print("Działa")
-                    move = Move(self.playerClicks[0], self.playerClicks[1], self.gs.board)
-                    print(move)
+                    self.move = Move(self.playerClicks[0], self.playerClicks[1], self.gs.board)
+    
+                    if self.move in self.validMoves:
+                        self.gs.makeMove(self.move)
+                        self.humanTurn = (self.gs.WhiteToMove and self.playerOne) or (not self.gs.WhiteToMove and self.playerTwo)
+                        
+                        self.moveMade = True
+                        self.animate = True
+                        self.sqSelected = ()
+                        self.playerClicks = []
+                        self.validMoves = self.gs.getValidMoves()
+                    else:
+                        self.sqSelected = ()
+                        self.playerClicks = []
 
-                    for i in range(len(self.validMoves)):
-                        if move == self.validMoves[i]:
-                            #print(move.getChessNotation())
-                            self.gs.makeMove(self.validMoves[i])
-                            self.gs.printBoard()
-                            self.moveMade = True
-                            self.animate = True
-                            self.sqSelected = ()
-                            self.playerClicks = []
-                        if not self.moveMade:
-                            self.playerClicks = [self.sqSelected]
 
         elif event.button() == Qt.RightButton:
-            print("Kliknięto prawym przyciskiem myszy")
+            pass
 
 
 
@@ -131,6 +201,7 @@ if __name__ == '__main__':
     chessboard = ChessGraphicsQT()
     window.setCentralWidget(chessboard)
     window.setGeometry(750, 250, BOARD_WIDTH, BOARD_HEIGHT)
+    chessboard.setFocus()
     window.show()
 
     sys.exit(app.exec_())

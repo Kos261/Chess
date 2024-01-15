@@ -1,7 +1,8 @@
 import sys
-from PyQt5.QtWidgets import QApplication, QMainWindow, QWidget, QLabel, QVBoxLayout
-from PyQt5.QtGui import QPainter, QPixmap, QColor
+from PyQt5.QtWidgets import QApplication, QMainWindow, QWidget, QLabel, QVBoxLayout, QHBoxLayout, QPushButton,QFileDialog, QDialog, QMessageBox, QTextEdit,QStyleFactory
+from PyQt5.QtGui import QPainter, QPixmap, QColor, QIcon, QFont, QPalette
 from PyQt5.QtCore import Qt, QTimer
+
 from ChessEngine_Advanced import GameState, Move
 import random
 import pygame
@@ -11,24 +12,91 @@ MOVE_LOG_PANEL_WIDTH = 200
 MOVE_LOG_PANEL_HEIGHT = BOARD_HEIGHT
 DIMENSION = 8
 SQ_SIZE = BOARD_HEIGHT//DIMENSION
-MAX_FPS = 1
+MAX_FPS = 30
 IMAGES = {}
 
 
+class MainGame(QDialog):
+    def __init__(self, playerOne, playerTwo):
+        super().__init__()
+        self.playerOne = playerOne
+        self.playerTwo = playerTwo
+        self.layout = QHBoxLayout(self)
+        self.center()
+        self.darkMode()
+        self.createButtons()
+
+        # Dodaj niestandardowy widget do układu
+        self.chessboard = ChessGraphicsQT(self.playerOne, self.playerTwo)
+        self.layout.addWidget(self.chessboard)
+        self.chessboard.setFocus()
+    
+        #Text edit
+        self.text_edit = QTextEdit()
+        font = self.text_edit.currentFont()
+        font.setPointSize(13)
+        self.text_edit.setFont(font)
+        self.text_edit.setReadOnly(True)  # Ustaw tryb tylko do odczytu
+        self.text_edit.setFixedSize(200,BOARD_HEIGHT)
+        self.layout.addWidget(self.text_edit)
+
+        self.setLayout(self.layout)
+        self.center()
+
+    def darkMode(self):
+        # Tworzenie ciemnego motywu
+        
+        self.dark_palette = QPalette()
+        self.dark_palette.setColor(QPalette.Window, QColor(53, 53, 53))
+        self.dark_palette.setColor(QPalette.WindowText, Qt.white)
+        self.dark_palette.setColor(QPalette.Button, QColor(53, 53, 53))
+        self.dark_palette.setColor(QPalette.ButtonText, Qt.white)
+        self.dark_palette.setColor(QPalette.Base, QColor(25, 25, 25))
+        self.dark_palette.setColor(QPalette.AlternateBase, QColor(53, 53, 53))
+        self.dark_palette.setColor(QPalette.ToolTipBase, Qt.white)
+        self.dark_palette.setColor(QPalette.ToolTipText, Qt.white)
+        self.dark_palette.setColor(QPalette.Text, Qt.white)
+        self.dark_palette.setColor(QPalette.Highlight, QColor(142, 45, 197))
+        self.dark_palette.setColor(QPalette.HighlightedText, Qt.black)
+
+        # Ustawianie ciemnego motywu
+        self.setPalette(self.dark_palette)
+
+        # Ustawianie ciemnego stylu
+        QApplication.setStyle(QStyleFactory.create('Fusion'))
+
+    def createButtons(self):
+        self.button_size = 150
+        self.button = QPushButton("TEST", self)
+        self.button.setFixedSize(self.button_size, self.button_size)
+        #self.button.clicked.connect()
+        self.layout.addWidget(self.button)
+
+    def append_text(self, text):
+        self.text_edit.append(text)
+
+    def center(self):
+        # Ustaw okno na środku ekranu
+        screen_geometry = QApplication.desktop().screenGeometry()
+        x = (screen_geometry.width() - self.width()) // 2
+        y = (screen_geometry.height() - self.height()) // 2
+        self.move(x, y)
+
 class ChessGraphicsQT(QWidget):
-    def __init__(self):
+    def __init__(self, playerOne = True, playerTwo = True):
         super().__init__()
         self.loadImages()
         self.gs = GameState()
         self.validMoves = self.gs.getValidMoves()
         random.shuffle(self.validMoves)
-                  
+
+        self.playerOne = playerOne
+        self.playerTwo = playerTwo   
+
         self.animate = False
         self.sqSelected = ()
         self.playerClicks = [] 
         self.gameOver = False
-        self.playerOne = True
-        self.playerTwo = True
         self.AIThinking = False
         self.moveFinderProcess = None
         self.moveUndone = False
@@ -68,12 +136,11 @@ class ChessGraphicsQT(QWidget):
                     self.painter.drawPixmap(col*SQ_SIZE, row*SQ_SIZE, SQ_SIZE, SQ_SIZE, pixmap)
 
     def updateGameState(self):
-        print(self.sqSelected,self.playerClicks)
+        
         if self.moveMade:
             self.moveMade = False
             self.animate = False
             self.moveUndone = False
-            print(self.sqSelected,self.playerClicks)
             self.sqSelected = ()         
             self.playerClicks = []      #TO DODAŁEM TERAZ  
                     
@@ -93,9 +160,25 @@ class ChessGraphicsQT(QWidget):
         self.painter.setRenderHint(QPainter.Antialiasing)
         if self.animate:
             self.animateMove()
+            self.drawBoard()
+            self.highlightSquares()
         else:
             self.drawBoard()
+            self.highlightSquares()
         self.painter.end()
+
+
+    def highlightSquares(self):
+        if self.sqSelected != ():
+            yellow = QColor(100,100,0,100)
+            blue = QColor(0,0,220,50)
+            row, col = self.sqSelected
+            if self.gs.board[row][col][0] == ('w' if self.gs.WhiteToMove else 'b'):
+                self.painter.fillRect(col*SQ_SIZE, row * SQ_SIZE, SQ_SIZE,SQ_SIZE,blue)
+
+                for move in self.validMoves:
+                    if move.startRow == row and move.startCol == col:
+                        self.painter.fillRect(move.endCol * SQ_SIZE, move.endRow * SQ_SIZE, SQ_SIZE,SQ_SIZE, yellow)
 
     def animateMove(self):
         #DO POPRAWY
@@ -192,16 +275,96 @@ class ChessGraphicsQT(QWidget):
         elif event.button() == Qt.RightButton:
             pass
 
+class StartScreen(QWidget):
+    def __init__(self):
+        super().__init__()
+        self.playerOne = None
+        self.playerTwo = None
+        self.layout = QVBoxLayout(self)
+        self.darkMode()
+        self.createButtons()
+
+    def createButtons(self):
+        self.label = QLabel("Super Chess")
+        self.label.setAlignment(Qt.AlignCenter)
+        font = QFont("Arial", 25)
+        font2 = QFont("Arial", 12)
+        self.label.setFont(font)
+
+        self.button1 = QPushButton("Player1 vs Player2")
+        self.button1.setFont(font2)
+        self.button1.clicked.connect(self.clickedPVP)
+
+        self.button2 = QPushButton("Player vs AI")
+        self.button2.setFont(font2)
+        self.button2.clicked.connect(self.clickedPVAi)
+        
+        self.button3 = QPushButton("AI1 vs AI2")
+        self.button3.setFont(font2)
+        self.button3.clicked.connect(self.clickedAiVAi)
+
+        self.button4 = QPushButton("Start Game")
+        self.button4.setFont(font2)
+        self.button4.clicked.connect(self.startGame)
+        
+        self.layout.addWidget(self.label)
+        self.layout.addWidget(self.button1)
+        self.layout.addWidget(self.button2)
+        self.layout.addWidget(self.button3)
+        self.layout.addWidget(self.button4)
+
+    def clickedPVP(self):
+        self.playerOne = True
+        self.playerTwo = True
+
+    def clickedPVAi(self):
+        self.playerOne = True
+        self.playerTwo = False
+
+    def clickedAiVAi(self):
+        self.playerOne = False
+        self.playerTwo = False
+
+    def startGame(self):
+        if (self.playerOne != None) and (self.playerTwo != None):
+            self.close()
+            Game = MainGame(self.playerOne, self.playerOne)
+            Game.setGeometry(750, 250, BOARD_WIDTH+500, BOARD_HEIGHT+100)
+            Game.exec_()
+        else:
+            self.label.setText("Wybierz tryb gry")
+
+    def darkMode(self):
+        # Tworzenie ciemnego motywu
+        self.dark_palette = QPalette()
+        self.dark_palette.setColor(QPalette.Window, QColor(53, 53, 53))
+        self.dark_palette.setColor(QPalette.WindowText, Qt.white)
+        self.dark_palette.setColor(QPalette.Button, QColor(53, 53, 53))
+        self.dark_palette.setColor(QPalette.ButtonText, Qt.white)
+        self.dark_palette.setColor(QPalette.Base, QColor(25, 25, 25))
+        self.dark_palette.setColor(QPalette.AlternateBase, QColor(53, 53, 53))
+        self.dark_palette.setColor(QPalette.ToolTipBase, Qt.white)
+        self.dark_palette.setColor(QPalette.ToolTipText, Qt.white)
+        self.dark_palette.setColor(QPalette.Text, Qt.white)
+        self.dark_palette.setColor(QPalette.Highlight, QColor(142, 45, 197))
+        self.dark_palette.setColor(QPalette.HighlightedText, Qt.black)
+
+        # Ustawianie ciemnego motywu
+        self.setPalette(self.dark_palette)
+
+        # Ustawianie ciemnego stylu
+        QApplication.setStyle(QStyleFactory.create('Fusion'))
 
 
 if __name__ == '__main__':
     app = QApplication(sys.argv)
 
-    window = QMainWindow()
-    chessboard = ChessGraphicsQT()
-    window.setCentralWidget(chessboard)
-    window.setGeometry(750, 250, BOARD_WIDTH, BOARD_HEIGHT)
-    chessboard.setFocus()
+    # window = MainGame(True, True)
+    # window.setGeometry(750, 250, BOARD_WIDTH+500, BOARD_HEIGHT+100)
+    # window.show()
+
+    window = StartScreen()
+    window.setGeometry(750, 250, 340, 300)
     window.show()
 
     sys.exit(app.exec_())

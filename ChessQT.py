@@ -2,8 +2,10 @@ import sys
 from PyQt5.QtWidgets import QApplication, QMainWindow, QWidget, QLabel, QVBoxLayout, QHBoxLayout, QPushButton,QFileDialog, QDialog, QMessageBox, QTextEdit,QStyleFactory
 from PyQt5.QtGui import QPainter, QPixmap, QColor, QIcon, QFont, QPalette
 from PyQt5.QtCore import Qt, QTimer
+from multiprocessing import Process, Queue
 
 from ChessEngine_Advanced import GameState, Move
+import SmartMoveFinder
 import random
 import pygame
 
@@ -12,7 +14,7 @@ MOVE_LOG_PANEL_WIDTH = 200
 MOVE_LOG_PANEL_HEIGHT = BOARD_HEIGHT
 DIMENSION = 8
 SQ_SIZE = BOARD_HEIGHT//DIMENSION
-MAX_FPS = 30
+MAX_FPS = 20
 IMAGES = {}
 
 
@@ -22,12 +24,14 @@ class MainGame(QDialog):
         self.playerOne = playerOne
         self.playerTwo = playerTwo
         self.layout = QHBoxLayout(self)
+        self.setFixedSize(1.75*BOARD_WIDTH, BOARD_HEIGHT+40)
         self.center()
         self.darkMode()
         self.createButtons()
 
         # Dodaj niestandardowy widget do układu
         self.chessboard = ChessGraphicsQT(self.playerOne, self.playerTwo)
+        self.chessboard.setFixedSize(BOARD_WIDTH, BOARD_HEIGHT)
         self.layout.addWidget(self.chessboard)
         self.chessboard.setFocus()
     
@@ -83,7 +87,7 @@ class MainGame(QDialog):
         self.move(x, y)
 
 class ChessGraphicsQT(QWidget):
-    def __init__(self, playerOne = True, playerTwo = True):
+    def __init__(self, playerOne, playerTwo):
         super().__init__()
         self.loadImages()
         self.gs = GameState()
@@ -107,11 +111,31 @@ class ChessGraphicsQT(QWidget):
         self.timer.timeout.connect(self.updateGameState)
         self.timer.start(int(1000 / MAX_FPS))
 
+    def AIMoveLogic(self):
+        if not self.gameOver and not self.humanTurn and not self.moveUndone:
+            if not self.AIThinking:
+                self.AIThinking = True
+                print("Thinking...")
+                returnQueue = Queue()   #Used to pass data between threads  
+                self.moveFinderProcess = Process(target=SmartMoveFinder.negaMaxAlphaBetaCaller_, 
+                                            args = (self.gs, self.validMoves, returnQueue))
+                self.moveFinderProcess.start() #Call findBestMove(gs,validMoves,returnQueue)
+
+        if not self.moveFinderProcess.is_alive():
+                print("Done thinking")
+                AIMove = returnQueue.get()
+                if AIMove is None:
+                    AIMove = SmartMoveFinder.findRandomMove(self.validMoves)
+                self.gs.makeMove(AIMove,AIPlaying=True)
+                self.moveMade = True
+                self.animate = True  
+                self.AIThinking = False
+
     def loadImages(self):
         pieces = ["bR", "bN", "bB", "bQ", "bK", "bp", "wR", "wN", "wB", "wQ", "wK", "wp"]
         for piece in pieces:
             # Figury od razu w skali planszy
-            pixmap = QPixmap("Figury/" + piece + ".png")
+            pixmap = QPixmap("Figury_HD/" + piece + ".png")
             pixmap = pixmap.scaled(SQ_SIZE, SQ_SIZE)
             label = QLabel()
             label.setPixmap(pixmap)
@@ -119,7 +143,7 @@ class ChessGraphicsQT(QWidget):
 
     def drawBoard(self):
         global colors
-        colors = [QColor(150,150,150), QColor(50,50,50)]
+        colors = [QColor(180,180,150), QColor(40,40,50)]
 
         for row in range(DIMENSION):
             for col in range(DIMENSION):
@@ -142,31 +166,40 @@ class ChessGraphicsQT(QWidget):
             self.animate = False
             self.moveUndone = False
             self.sqSelected = ()         
-            self.playerClicks = []      #TO DODAŁEM TERAZ  
-                    
+            self.playerClicks = []  
+            self.validMoves = self.gs.getValidMoves()  
+        
+        if not self.gameOver and not self.humanTurn and not self.moveUndone:
+            self.AIMoveLogic()
+
         self.gs.scanBoard()
+        self.update()
 
         if self.gs.checkMate or self.gs.staleMate:
             self.gameOver = True
             if self.gs.staleMate:
-                text = 'Stalemate'
+                self.Wintext = 'Stalemate'
             else:
-                text = 'White wins by checkmate' if not self.gs.WhiteToMove else 'Black wins by checkmate'
-            print(text)
-        self.update() 
+                self.Wintext = 'White wins' if not self.gs.WhiteToMove else 'Black wins'
+            print(self.Wintext)
+            
+            self.update()
+            self.timer.stop()
 
     def paintEvent(self,event):
         self.painter = QPainter(self)
         self.painter.setRenderHint(QPainter.Antialiasing)
-        if self.animate:
-            self.animateMove()
+
+        if not self.gameOver: 
+            if self.animate:
+                self.animateMove()
             self.drawBoard()
             self.highlightSquares()
+
         else:
             self.drawBoard()
-            self.highlightSquares()
+            self.drawEndText(self.Wintext)
         self.painter.end()
-
 
     def highlightSquares(self):
         if self.sqSelected != ():
@@ -213,6 +246,25 @@ class ChessGraphicsQT(QWidget):
             # Update the widget
         self.painter.end()
 
+    def drawEndText(self,text):
+        font = QFont("Arial", 40)
+        self.painter.setFont(font)
+        self.painter.setPen(Qt.red)
+        x = BOARD_WIDTH//2
+        y = BOARD_HEIGHT//2
+
+        bounding_rect = self.painter.boundingRect(x, y, 0, 0, Qt.TextDontPrint, text)
+        text_width = bounding_rect.width()
+        text_height = bounding_rect.height()
+
+        self.painter.drawText(x-text_width//2, y-text_height//2 , text)
+
+        self.painter.setPen(Qt.yellow)
+        self.painter.drawText(x-text_width//2+3, y-text_height//2+3 , text)
+
+        self.painter.setPen(Qt.blue)
+        self.painter.drawText(x-text_width//2+6, y-text_height//2+6 , text)
+
     def keyPressEvent(self, event):
         if event.key() == Qt.Key_Z:
             self.gs.undoMove()   #Undo move
@@ -228,18 +280,18 @@ class ChessGraphicsQT(QWidget):
             self.validMoves = self.gs.getValidMoves()
 
         if event.key() == Qt.Key_R:  #Reset game
-                    self.gs = GameState()
-                    self.validMoves = self.gs.getValidMoves()
-                    self.sqSelected = ()
-                    self.playerClicks = []
-                    self.gameOver = False
-                    self.moveMade = True
-                    self.animate = False
-                    # if AIThinking:
-                    #     moveFinderProcess.terminate()
-                    #     AIThinking = False
-                    self.moveUndone = True
-               
+            self.gs = GameState()
+            self.validMoves = self.gs.getValidMoves()
+            self.sqSelected = ()
+            self.playerClicks = []
+            self.gameOver = False
+            self.moveMade = True
+            self.animate = False
+            # if AIThinking:
+            #     moveFinderProcess.terminate()
+            #     AIThinking = False
+            self.moveUndone = True
+        
     def mousePressEvent(self, event):
         if event.button() == Qt.LeftButton: 
             if not self.gameOver:
@@ -303,27 +355,25 @@ class StartScreen(QWidget):
         self.button3.setFont(font2)
         self.button3.clicked.connect(self.clickedAiVAi)
 
-        self.button4 = QPushButton("Start Game")
-        self.button4.setFont(font2)
-        self.button4.clicked.connect(self.startGame)
-        
         self.layout.addWidget(self.label)
         self.layout.addWidget(self.button1)
         self.layout.addWidget(self.button2)
         self.layout.addWidget(self.button3)
-        self.layout.addWidget(self.button4)
 
     def clickedPVP(self):
         self.playerOne = True
         self.playerTwo = True
+        self.startGame()
 
     def clickedPVAi(self):
         self.playerOne = True
         self.playerTwo = False
+        self.startGame()
 
     def clickedAiVAi(self):
         self.playerOne = False
         self.playerTwo = False
+        self.startGame()
 
     def startGame(self):
         if (self.playerOne != None) and (self.playerTwo != None):

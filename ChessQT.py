@@ -3,6 +3,7 @@ from PyQt5.QtWidgets import QApplication, QMainWindow, QWidget, QLabel, QVBoxLay
 from PyQt5.QtGui import QPainter, QPixmap, QColor, QIcon, QFont, QPalette
 from PyQt5.QtCore import Qt, QTimer
 from multiprocessing import Process, Queue
+import threading
 
 from ChessEngine_Advanced import GameState, Move
 import SmartMoveFinder
@@ -24,13 +25,13 @@ class MainGame(QDialog):
         self.playerOne = playerOne
         self.playerTwo = playerTwo
         self.layout = QHBoxLayout(self)
-        self.setFixedSize(1.75*BOARD_WIDTH, BOARD_HEIGHT+40)
+        self.setFixedSize(int(1.7*BOARD_WIDTH), BOARD_HEIGHT+40)
         self.center()
         self.darkMode()
         self.createButtons()
 
         # Dodaj niestandardowy widget do układu
-        self.chessboard = ChessGraphicsQT(self.playerOne, self.playerTwo)
+        self.chessboard = ChessGraphicsQT(self, self.playerOne, self.playerTwo)
         self.chessboard.setFixedSize(BOARD_WIDTH, BOARD_HEIGHT)
         self.layout.addWidget(self.chessboard)
         self.chessboard.setFocus()
@@ -87,9 +88,10 @@ class MainGame(QDialog):
         self.move(x, y)
 
 class ChessGraphicsQT(QWidget):
-    def __init__(self, playerOne, playerTwo):
+    def __init__(self, GUI, playerOne, playerTwo):
         super().__init__()
         self.loadImages()
+        self.GUI = GUI
         self.gs = GameState()
         self.validMoves = self.gs.getValidMoves()
         random.shuffle(self.validMoves)
@@ -121,7 +123,7 @@ class ChessGraphicsQT(QWidget):
                                             args = (self.gs, self.validMoves, returnQueue))
                 self.moveFinderProcess.start() #Call findBestMove(gs,validMoves,returnQueue)
 
-        if not self.moveFinderProcess.is_alive():
+        elif not self.moveFinderProcess.is_alive():
                 print("Done thinking")
                 AIMove = returnQueue.get()
                 if AIMove is None:
@@ -181,7 +183,7 @@ class ChessGraphicsQT(QWidget):
                 self.Wintext = 'Stalemate'
             else:
                 self.Wintext = 'White wins' if not self.gs.WhiteToMove else 'Black wins'
-            print(self.Wintext)
+            self.GUI.append_text(self.Wintext)
             
             self.update()
             self.timer.stop()
@@ -314,6 +316,7 @@ class ChessGraphicsQT(QWidget):
                         self.gs.makeMove(self.move)
                         self.humanTurn = (self.gs.WhiteToMove and self.playerOne) or (not self.gs.WhiteToMove and self.playerTwo)
                         
+                        self.GUI.append_text(str(self.gs.moveLog[-1]))
                         self.moveMade = True
                         self.animate = True
                         self.sqSelected = ()
@@ -326,6 +329,9 @@ class ChessGraphicsQT(QWidget):
 
         elif event.button() == Qt.RightButton:
             pass
+
+
+
 
 class StartScreen(QWidget):
     def __init__(self):

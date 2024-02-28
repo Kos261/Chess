@@ -3,7 +3,7 @@ from PyQt5.QtWidgets import QApplication, QMainWindow, QWidget, QLabel, QVBoxLay
 from PyQt5.QtGui import QPainter, QPixmap, QColor, QIcon, QFont, QPalette
 from PyQt5.QtCore import Qt, QTimer
 from multiprocessing import Process, Queue
-import threading
+from threading import Thread
 
 from ChessEngine_Advanced import GameState, Move
 import SmartMoveFinder
@@ -99,15 +99,14 @@ class ChessGraphicsQT(QWidget):
         self.playerOne = playerOne
         self.playerTwo = playerTwo   
 
-        self.animate = False
-        self.sqSelected = ()
+        self.sqSelected = () 
         self.playerClicks = [] 
         self.gameOver = False
         self.AIThinking = False
         self.moveFinderProcess = None
         self.moveUndone = False
         self.moveMade = False  
-        self.humanTurn = (self.gs.WhiteToMove and self.playerOne) or (not self.gs.WhiteToMove and self.playerTwo)
+        self.humanTurn = self.playerOne if self.gs.WhiteToMove else self.playerTwo
 
         self.timer = QTimer(self)
         self.timer.timeout.connect(self.updateGameState)
@@ -117,21 +116,24 @@ class ChessGraphicsQT(QWidget):
         if not self.gameOver and not self.humanTurn and not self.moveUndone:
             if not self.AIThinking:
                 self.AIThinking = True
-                print("Thinking...")
-                returnQueue = Queue()   #Used to pass data between threads  
-                self.moveFinderProcess = Process(target=SmartMoveFinder.negaMaxAlphaBetaCaller_, 
-                                            args = (self.gs, self.validMoves, returnQueue))
-                self.moveFinderProcess.start() #Call findBestMove(gs,validMoves,returnQueue)
+                self.GUI.append_text("Thinking...")
+                self.returnQueue = Queue()   #Used to pass data between threads 
+               
+                self.moveFinderProcess = Thread(
+                                target=SmartMoveFinder.negaMaxAlphaBetaCaller_, 
+                                args = (self.gs, self.validMoves, self.returnQueue),
+                                daemon=True)
+                self.moveFinderProcess.start()
 
-        elif not self.moveFinderProcess.is_alive():
-                print("Done thinking")
-                AIMove = returnQueue.get()
-                if AIMove is None:
-                    AIMove = SmartMoveFinder.findRandomMove(self.validMoves)
-                self.gs.makeMove(AIMove,AIPlaying=True)
-                self.moveMade = True
-                self.animate = True  
-                self.AIThinking = False
+        if not self.moveFinderProcess.is_alive():
+            print("Done thinking")
+            AIMove = self.returnQueue.get()
+            if AIMove is None:
+                AIMove = SmartMoveFinder.findRandomMove(self.validMoves)
+            self.gs.makeMove(AIMove,AIPlaying=True)
+            self.moveMade = True 
+            self.AIThinking = False
+            self.humanTurn =  self.playerOne if self.gs.WhiteToMove else self.playerTwo
 
     def loadImages(self):
         pieces = ["bR", "bN", "bB", "bQ", "bK", "bp", "wR", "wN", "wB", "wQ", "wK", "wp"]
@@ -165,7 +167,6 @@ class ChessGraphicsQT(QWidget):
         
         if self.moveMade:
             self.moveMade = False
-            self.animate = False
             self.moveUndone = False
             self.sqSelected = ()         
             self.playerClicks = []  
@@ -173,9 +174,11 @@ class ChessGraphicsQT(QWidget):
         
         if not self.gameOver and not self.humanTurn and not self.moveUndone:
             self.AIMoveLogic()
-
-        self.gs.scanBoard()
-        self.update()
+        
+        #TUTAJ BLOKADA GDY AI SYMULUJE RUCHY Ale średnio działa
+        if not self.AIThinking:
+            self.gs.scanBoard()
+            self.update()
 
         if self.gs.checkMate or self.gs.staleMate:
             self.gameOver = True
@@ -193,8 +196,6 @@ class ChessGraphicsQT(QWidget):
         self.painter.setRenderHint(QPainter.Antialiasing)
 
         if not self.gameOver: 
-            if self.animate:
-                self.animateMove()
             self.drawBoard()
             self.highlightSquares()
 
@@ -274,10 +275,11 @@ class ChessGraphicsQT(QWidget):
             self.playerClicks = []
             self.gameOver = False
             self.moveMade = True
-            self.animate = False
-            # if AIThinking:
-            #     moveFinderProcess.terminate()
-            # AIThinking = False
+            
+            if AIThinking:
+                self.moveFinderProcess.terminate()
+            AIThinking = False
+
             self.moveUndone = True
             self.validMoves = self.gs.getValidMoves()
 
@@ -288,10 +290,11 @@ class ChessGraphicsQT(QWidget):
             self.playerClicks = []
             self.gameOver = False
             self.moveMade = True
-            self.animate = False
-            # if AIThinking:
-            #     moveFinderProcess.terminate()
-            #     AIThinking = False
+            
+            if AIThinking:
+                self.moveFinderProcess.terminate()
+                AIThinking = False
+
             self.moveUndone = True
         
     def mousePressEvent(self, event):
@@ -301,24 +304,23 @@ class ChessGraphicsQT(QWidget):
                 row = event.pos().y() // SQ_SIZE
 
                 if self.sqSelected == (row, col) or col >= 8:
-                    # Gracz wybrał to samo pole 2 razy
-                    self.sqSelected = ()  # deselect
+                    self.sqSelected = ()  
                     self.playerClicks = []
                 else:
                     self.sqSelected = (row, col)
                     self.playerClicks.append(self.sqSelected)
                                         
-                                        #TU ZMIENIŁEM ==
-                if len(self.playerClicks) == 2 and self.humanTurn:
+                                        #TU ZMIENIŁEM == self.humanTurn
+                if len(self.playerClicks) == 2:
                     self.move = Move(self.playerClicks[0], self.playerClicks[1], self.gs.board)
     
                     if self.move in self.validMoves:
                         self.gs.makeMove(self.move)
-                        self.humanTurn = (self.gs.WhiteToMove and self.playerOne) or (not self.gs.WhiteToMove and self.playerTwo)
-                        
+                        self.humanTurn =  self.playerOne if self.gs.WhiteToMove else self.playerTwo
+                        self.GUI.append_text(f"Teraz gra człowiek - {self.humanTurn}")
                         self.GUI.append_text(str(self.gs.moveLog[-1]))
                         self.moveMade = True
-                        self.animate = True
+                    
                         self.sqSelected = ()
                         self.playerClicks = []
                         self.validMoves = self.gs.getValidMoves()
@@ -329,7 +331,6 @@ class ChessGraphicsQT(QWidget):
 
         elif event.button() == Qt.RightButton:
             pass
-
 
 
 
@@ -384,7 +385,7 @@ class StartScreen(QWidget):
     def startGame(self):
         if (self.playerOne != None) and (self.playerTwo != None):
             self.close()
-            Game = MainGame(self.playerOne, self.playerOne)
+            Game = MainGame(self.playerOne, self.playerTwo)
             Game.setGeometry(750, 250, BOARD_WIDTH+500, BOARD_HEIGHT+100)
             Game.exec_()
         else:
@@ -414,10 +415,6 @@ class StartScreen(QWidget):
 
 if __name__ == '__main__':
     app = QApplication(sys.argv)
-
-    # window = MainGame(True, True)
-    # window.setGeometry(750, 250, BOARD_WIDTH+500, BOARD_HEIGHT+100)
-    # window.show()
 
     window = StartScreen()
     window.setGeometry(750, 250, 340, 300)

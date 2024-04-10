@@ -24,7 +24,7 @@ class MainGame(QDialog):
         super().__init__()
         self.playerOne = playerOne
         self.playerTwo = playerTwo
-        self.layout = QHBoxLayout(self)
+        self.LeftLayout = QHBoxLayout(self)
         self.setFixedSize(int(1.7*BOARD_WIDTH), BOARD_HEIGHT+40)
         self.center()
         self.darkMode()
@@ -33,7 +33,7 @@ class MainGame(QDialog):
         # Dodaj niestandardowy widget do układu
         self.chessboard = ChessGraphicsQT(self, self.playerOne, self.playerTwo)
         self.chessboard.setFixedSize(BOARD_WIDTH, BOARD_HEIGHT)
-        self.layout.addWidget(self.chessboard)
+        self.LeftLayout.addWidget(self.chessboard)
         self.chessboard.setFocus()
     
         #Text edit
@@ -43,9 +43,9 @@ class MainGame(QDialog):
         self.text_edit.setFont(font)
         self.text_edit.setReadOnly(True)  # Ustaw tryb tylko do odczytu
         self.text_edit.setFixedSize(200,BOARD_HEIGHT)
-        self.layout.addWidget(self.text_edit)
+        self.LeftLayout.addWidget(self.text_edit)
 
-        self.setLayout(self.layout)
+        self.setLayout(self.LeftLayout)
         self.center()
 
     def darkMode(self):
@@ -71,11 +71,20 @@ class MainGame(QDialog):
         QApplication.setStyle(QStyleFactory.create('Fusion'))
 
     def createButtons(self):
+        # self.ButtonLayout = QVBoxLayout(self)
+        # self.LeftLayout.addChildLayout(self.ButtonLayout)
         self.button_size = 150
+
+
         self.button = QPushButton("TEST", self)
         self.button.setFixedSize(self.button_size, self.button_size)
         #self.button.clicked.connect()
-        self.layout.addWidget(self.button)
+        self.LeftLayout.addWidget(self.button)
+
+        # self.new_game_butt = QPushButton("Nowa gra", self)
+        # self.new_game_butt.setFixedSize(self.button_size, self.button_size)
+        # # self.new_game_butt.clicked.connect()
+        # self.ButtonLayout.addWidget(self.new_game_butt)
 
     def append_text(self, text):
         self.text_edit.append(text)
@@ -339,7 +348,7 @@ class StartScreen(QWidget):
         super().__init__()
         self.playerOne = None
         self.playerTwo = None
-        self.layout = QVBoxLayout(self)
+        self.Layout = QVBoxLayout(self)
         self.darkMode()
         self.createButtons()
 
@@ -362,10 +371,10 @@ class StartScreen(QWidget):
         self.button3.setFont(font2)
         self.button3.clicked.connect(self.clickedAiVAi)
 
-        self.layout.addWidget(self.label)
-        self.layout.addWidget(self.button1)
-        self.layout.addWidget(self.button2)
-        self.layout.addWidget(self.button3)
+        self.Layout.addWidget(self.label)
+        self.Layout.addWidget(self.button1)
+        self.Layout.addWidget(self.button2)
+        self.Layout.addWidget(self.button3)
 
     def clickedPVP(self):
         self.playerOne = True

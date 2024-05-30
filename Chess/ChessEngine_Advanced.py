@@ -1,29 +1,29 @@
 #Ta klasa odpowiada za obecny stan gry oraz poprawne ruchy.
 
 class GameState():
-    def __init__(self):
+    def __init__(self, GUI):
         #Pierwsza litera kolor, druga rodzaj R-rook, N-knight, B-bishop, Q-queen, K-king "--" puste
-        self.board = [
-            ["bR","bN","bB","bQ","bK","bB","bN","bR"],
-            ["bp","bp","bp","bp","bp","bp","bp","bp"],
-            ["--","--","--","--","--","--","--","--"],
-            ["--","--","--","--","--","--","--","--"],
-            ["--","--","--","--","--","--","--","--"],
-            ["--","--","--","--","--","--","--","--"],
-            ["wp","wp","wp","wp","wp","wp","wp","wp"],
-            ["wR","wN","wB","wQ","wK","wB","wN","wR"]]
-        
         # self.board = [
-        #   ["bR","bN","bB","bQ","bK","bB","bN","bR"],
-        #   ["bp","bp","bp","bp","bp","bp","bp","bp"],
-        #   ["--","--","--","--","--","wQ","--","--"],
-        #   ["--","--","--","--","--","--","--","--"],
-        #   ["--","--","wB","--","--","--","--","--"],
-        #   ["--","--","--","--","--","--","--","--"],
-        #   ["wp","wp","wp","wp","wp","wp","wp","wp"],
-        #   ["wR","wN","wB","--","wK","--","wN","wR"]]
-
+        #     ["bR","bN","bB","bQ","bK","bB","bN","bR"],
+        #     ["bp","bp","bp","bp","bp","bp","bp","bp"],
+        #     ["--","--","--","--","--","--","--","--"],
+        #     ["--","--","--","--","--","--","--","--"],
+        #     ["--","--","--","--","--","--","--","--"],
+        #     ["--","--","--","--","--","--","--","--"],
+        #     ["wp","wp","wp","wp","wp","wp","wp","wp"],
+        #     ["wR","wN","wB","wQ","wK","wB","wN","wR"]]
         
+        self.board = [
+          ["--","--","--","--","--","--","bB","bR"],
+          ["--","--","--","--","--","--","--","--"],
+          ["--","--","--","--","bK","--","--","--"],
+          ["--","--","bp","--","--","--","--","--"],
+          ["--","--","--","--","wK","--","--","--"],
+          ["--","--","--","--","--","--","--","--"],
+          ["--","--","--","--","--","--","--","--"],
+          ["--","--","--","--","--","--","--","--"]]
+
+        self.GUI = GUI
         self.whiteKingLocation = (7,4)
         self.blackKingLocation = (0,4)
         self.moveLog = []
@@ -172,14 +172,18 @@ class GameState():
 
     def getValidMoves(self):
         moves = []
-
-        self.inCheck, self.pins, self.checks = self.checkForPinsAndChecks()
         if self.WhiteToMove:
             kingRow = self.whiteKingLocation[0]
             kingCol = self.whiteKingLocation[1]
+            allyColor = 'w'
+            enemyColor = 'b'
         else:
             kingRow = self.blackKingLocation[0]
             kingCol = self.blackKingLocation[1]
+            allyColor = 'b'
+            enemyColor = 'w'
+        self.inCheck, self.pins, self.checks = self.checkForPinsAndChecks(kingRow,kingCol,allyColor, enemyColor)
+        
 
         
         if self.inCheck:
@@ -222,20 +226,11 @@ class GameState():
             self.staleMate = False
         return moves
 
-    def checkForPinsAndChecks(self):
+    def checkForPinsAndChecks(self, startRow, startCol, allyColor, enemyColor):
         pins = []
         checks = []
         inCheck = False
-        if self.WhiteToMove:
-            enemyColor = 'b'
-            allyColor = 'w'
-            startRow = self.whiteKingLocation[0]
-            startCol = self.whiteKingLocation[1]
-        else:
-            enemyColor = 'w'
-            allyColor = 'b'
-            startRow = self.blackKingLocation[0]
-            startCol = self.blackKingLocation[1]
+        
         #Teraz sprawdzam wszystkie pins i szachy, jeśli zapinowany to śledzę figurę
         directions = ((-1,0),(0,-1),(1,0),(0,1),(-1,-1),(-1,1),(1,1),(1,-1))
         for j in range(len(directions)):
@@ -315,6 +310,12 @@ class GameState():
                     figs.append(square)
         if len(figs) == 2:
             self.staleMate = True
+
+        #Sprawdzanie czy król jest na planszy
+        if ('wK' not in figs) or ('bK' not in figs):
+            return False 
+        else:
+            return True
 
     def printBoard(self):
         for row in self.board:
@@ -500,9 +501,42 @@ class GameState():
                 else:       #Poza planszą
                     break
 
+    def smallScanAroundKing(self, row, col, allyColor, enemyColor):
+        directions = ((-1,-1),(1,1),(1,-1),(-1,1),(-1,0),(1,0),(0,-1),(0,1))
+        for i in range(8):
+            endRow = row + directions[i][0] 
+            endCol = col + directions[i][1]
+            if 0 <= endRow < 8 and 0 <= endCol < 8: #Na planszy  
+                inCheck, _, _ = self.checkForPinsAndChecks(endRow, endCol, allyColor, enemyColor) 
+                endPiece = self.board[endRow][endCol]
+                if (endPiece[0] != allyColor):
+                    if endPiece[1] == 'p' and  col != endCol:
+                        return True
+                    if endPiece[1] == 'K':
+                        return True
+                else:
+                    inCheck = False
+        return inCheck
+
+            
+
+
+
     def getKingMoves(self,row,col,moves):
+        
+        if self.WhiteToMove:
+            enemyColor = 'b'
+            allyColor = 'w'
+            startRow = self.whiteKingLocation[0]
+            startCol = self.whiteKingLocation[1]
+        else:
+            enemyColor = 'w'
+            allyColor = 'b'
+            startRow = self.blackKingLocation[0]
+            startCol = self.blackKingLocation[1]
+
         directions = ((-1,-1),(1,1),(1,-1),(-1,1),(-1,0),(1,0),(0,-1),(0,1)) #Wszystko
-        allyColor = 'w' if self.WhiteToMove else 'b'
+        
         for i in range(8):
             endRow = row + directions[i][0] 
             endCol = col + directions[i][1]
@@ -514,15 +548,18 @@ class GameState():
                     else:
                         self.blackKingLocation = (endRow, endCol)
                     
-                    inCheck, pins, checks = self.checkForPinsAndChecks()
-                    # print(inCheck,pins,checks)
+                    inCheck, pins, checks = self.checkForPinsAndChecks(startRow, startCol, allyColor, enemyColor)
+                    inCheck = self.smallScanAroundKing(endRow, endCol, allyColor, enemyColor)
+                    
                     if not inCheck:
                         moves.append(Move((row,col),(endRow,endCol),self.board))
 
                     if allyColor == 'w':
                         self.whiteKingLocation = (row,col)
                     else:
-                        self.blackKingLocation = (row,col)          
+                        self.blackKingLocation = (row,col) 
+
+         
 
     def getQueenMoves(self,row,col,moves):
         # self.getBishopMoves(row,col,moves)
@@ -554,7 +591,6 @@ class GameState():
                             break
                 else:       #Poza planszą
                     break
-
 
     def squareUnderAttack(self,row,col):
         self.WhiteToMove = not self.WhiteToMove             #Tura przeciwnika

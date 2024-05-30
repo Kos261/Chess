@@ -1,0 +1,41 @@
+<component name="InspectionProjectProfileManager">
+  <profile version="1.0">
+    <option name="myName" value="Project Default" />
+    <inspection_tool class="PyTypeCheckerInspection" enabled="false" level="WARNING" enabled_by_default="false" />
+    <inspection_tool class="PyUnresolvedReferencesInspection" enabled="true" level="WARNING" enabled_by_default="true">
+      <option name="ignoredIdentifiers">
+        <list>
+          <option value="pygame.sprite.Sprite.block_type" />
+          <option value="pygame.sprite.Sprite.draw" />
+          <option value="pygame.sprite.Sprite.tank" />
+          <option value="main.mouse_y" />
+          <option value="main.mouse_x" />
+          <option value="main.width" />
+          <option value="main.height" />
+          <option value="main.frame_count" />
+          <option value="taichi.Vector.field" />
+          <option value="pygame_glsl.App.iResolution" />
+          <option value="pygame_glsl.App.iTime" />
+          <option value="moderngl_window.geometry" />
+          <option value="glm.vec2" />
+          <option value="glm.perspective" />
+          <option value="glm.lookAt" />
+          <option value="glm.vec3" />
+          <option value="glm.radians" />
+          <option value="glm.mat4" />
+          <option value="glm.*" />
+          <option value="os._ScandirIterator.is_dir" />
+          <option value="os._ScandirIterator.path" />
+          <option value="os._ScandirIterator.is_file" />
+          <option value="os._ScandirIterator.name" />
+          <option value="pygame.sprite.AbstractGroup.change_layer" />
+          <option value="int.destroy" />
+          <option value="int.pos" />
+          <option value="int.destroy_trigger" />
+          <option value="int.delete" />
+          <option value="int.alive" />
+        </list>
+      </option>
+    </inspection_tool>
+  </profile>
+</component>

@@ -14,16 +14,17 @@ class GameState():
         #     ["wR","wN","wB","wQ","wK","wB","wN","wR"]]
         
         self.board = [
-          ["--","--","--","--","--","--","bB","bR"],
+          ["--","--","--","--","--","--","--","bR"],
+          ["--","--","--","--","--","--","bK","--"],
           ["--","--","--","--","--","--","--","--"],
-          ["--","--","--","--","bK","--","--","--"],
-          ["--","--","bp","--","--","--","--","--"],
+          ["--","--","--","--","bp","bp","bp","--"],
+          ["--","--","wB","--","--","--","--","--"],
           ["--","--","--","--","wK","--","--","--"],
-          ["--","--","--","--","--","--","--","--"],
-          ["--","--","--","--","--","--","--","--"],
+          ["--","--","--","--","--","--","bR","--"],
           ["--","--","--","--","--","--","--","--"]]
 
         self.GUI = GUI
+
         self.whiteKingLocation = (7,4)
         self.blackKingLocation = (0,4)
         self.moveLog = []
@@ -39,6 +40,9 @@ class GameState():
         self.enpassantPossible = ()
         self.enpassantPossibleLog = [self.enpassantPossible]
         self.currentCastlingRight = CastleRights(True,True,True,True)
+        self.currentCastlingRight = CastleRights(False,False,False,False)
+        self.GUI.append_text("WARNING \nCASTLING OFF!!!!")
+
         self.castleRightsLog = [CastleRights(self.currentCastlingRight.wKs,self.currentCastlingRight.bKs,
                                              self.currentCastlingRight.wQs,self.currentCastlingRight.bQs)]
             
@@ -172,18 +176,14 @@ class GameState():
 
     def getValidMoves(self):
         moves = []
+
+        self.inCheck, self.pins, self.checks = self.checkForPinsAndChecks()
         if self.WhiteToMove:
             kingRow = self.whiteKingLocation[0]
             kingCol = self.whiteKingLocation[1]
-            allyColor = 'w'
-            enemyColor = 'b'
         else:
             kingRow = self.blackKingLocation[0]
             kingCol = self.blackKingLocation[1]
-            allyColor = 'b'
-            enemyColor = 'w'
-        self.inCheck, self.pins, self.checks = self.checkForPinsAndChecks(kingRow,kingCol,allyColor, enemyColor)
-        
 
         
         if self.inCheck:
@@ -226,11 +226,20 @@ class GameState():
             self.staleMate = False
         return moves
 
-    def checkForPinsAndChecks(self, startRow, startCol, allyColor, enemyColor):
+    def checkForPinsAndChecks(self):
         pins = []
         checks = []
         inCheck = False
-        
+        if self.WhiteToMove:
+            enemyColor = 'b'
+            allyColor = 'w'
+            startRow = self.whiteKingLocation[0]
+            startCol = self.whiteKingLocation[1]
+        else:
+            enemyColor = 'w'
+            allyColor = 'b'
+            startRow = self.blackKingLocation[0]
+            startCol = self.blackKingLocation[1]
         #Teraz sprawdzam wszystkie pins i szachy, jeśli zapinowany to śledzę figurę
         directions = ((-1,0),(0,-1),(1,0),(0,1),(-1,-1),(-1,1),(1,1),(1,-1))
         for j in range(len(directions)):
@@ -255,11 +264,14 @@ class GameState():
                         #   Królowa gdziekolwiek
                         #   Skoczek
                         #   Król przeciwnika
-                        if (0 <= j <= 3 and pieceType == 'R') or (4 <= j <= 7 and pieceType == 'B') or \
-                        (i == 1 and pieceType == 'p' and \
-                        (enemyColor == 'w' and (oneDir == (-1,-1) or oneDir == (-1,1))) or \
-                        (enemyColor == 'b' and (oneDir == (1,-1) or oneDir == (1,1))))  or \
-                        (pieceType == 'Q') or (i == 1 and pieceType == 'K'):
+                        # if (0 <= j <= 3 and pieceType == 'R') or (4 <= j <= 7 and pieceType == 'B') or \
+                        # (i == 1 and pieceType == 'p' and \
+                        # (enemyColor == 'w' and (oneDir == (-1,-1) or oneDir == (-1,1))) or \
+                        # (enemyColor == 'b' and (oneDir == (1,-1) or oneDir == (1,1))))  or \
+                        # (pieceType == 'Q') or (i == 1 and pieceType == 'K'):
+                            
+
+                        if (0 <= j <= 3 and pieceType == 'R'):
                             if possiblePin == ():
                                 inCheck = True
                                 checks.append((endRow,endCol,oneDir[0],oneDir[1]))
@@ -267,6 +279,63 @@ class GameState():
                             else:   #Figura zasłania
                                 pins.append(possiblePin)
                                 break
+
+                        elif(4 <= j <= 7 and pieceType == 'B'):
+                            if possiblePin == ():
+                                inCheck = True
+                                checks.append((endRow,endCol,oneDir[0],oneDir[1]))
+                                break
+                            else:   #Figura zasłania
+                                pins.append(possiblePin)
+                                break
+
+                        elif(pieceType == 'Q'):
+                            if possiblePin == ():
+                                inCheck = True
+                                checks.append((endRow,endCol,oneDir[0],oneDir[1]))
+                                break
+                            else:   #Figura zasłania
+                                pins.append(possiblePin)
+                                break
+
+                        elif (i == 1 and pieceType == 'K'):
+                            if possiblePin == ():
+                                inCheck = True
+                                checks.append((endRow,endCol,oneDir[0],oneDir[1]))
+                                break
+                            else:   #Figura zasłania
+                                pins.append(possiblePin)
+                                break
+                        
+                        elif (i == 1 and pieceType == 'p'):
+                            if (enemyColor == 'w' and (oneDir == (1,-1) or oneDir == (1,1))):
+                                if possiblePin == ():
+                                    inCheck = True
+                                    checks.append((endRow,endCol,oneDir[0],oneDir[1]))
+                                    break
+                                else:   #Figura zasłania
+                                    pins.append(possiblePin)
+                                    break
+
+                            elif (enemyColor == 'b' and oneDir == (-1,-1) or oneDir == (-1,1)):
+                                if possiblePin == ():
+                                    inCheck = True
+                                    checks.append((endRow,endCol,oneDir[0],oneDir[1]))
+                                    break
+                                else:   #Figura zasłania
+                                    pins.append(possiblePin)
+                                    break
+
+
+
+                            
+                            # if possiblePin == ():
+                            #     inCheck = True
+                            #     checks.append((endRow,endCol,oneDir[0],oneDir[1]))
+                            #     break
+                            # else:   #Figura zasłania
+                            #     pins.append(possiblePin)
+                            #     break
                         else:   #Brak szacha
                             break
                 else:   #poza planszą
@@ -281,7 +350,9 @@ class GameState():
                 if endPiece[0] == enemyColor and endPiece[1] == 'N':
                     inCheck = True
                     checks.append((endRow,endCol,move[0],move[1]))
-        
+
+        # for item in checks:
+        #     self.GUI.append_text(str(item))
         return inCheck, pins, checks
 
     def getAllPossibleMoves(self, checkingCastling = False): 
@@ -311,15 +382,6 @@ class GameState():
         if len(figs) == 2:
             self.staleMate = True
 
-        #Sprawdzanie czy król jest na planszy
-        if ('wK' not in figs) or ('bK' not in figs):
-            return False 
-        else:
-            return True
-
-    def printBoard(self):
-        for row in self.board:
-            print(f"{row} \n")
 
     def getPawnMoves(self,row,col,moves):
         piecePinned = False
@@ -475,6 +537,7 @@ class GameState():
     def getBishopMoves(self,row,col,moves):
         piecePinned = False
         pinDirection = ()
+        self.GUI.append_text(str(self.pins))
         for i in range(len(self.pins)-1,-1,-1):
             if self.pins[i][0] == row and self.pins[i][1] == col:
                 piecePinned = True
@@ -501,42 +564,9 @@ class GameState():
                 else:       #Poza planszą
                     break
 
-    def smallScanAroundKing(self, row, col, allyColor, enemyColor):
-        directions = ((-1,-1),(1,1),(1,-1),(-1,1),(-1,0),(1,0),(0,-1),(0,1))
-        for i in range(8):
-            endRow = row + directions[i][0] 
-            endCol = col + directions[i][1]
-            if 0 <= endRow < 8 and 0 <= endCol < 8: #Na planszy  
-                inCheck, _, _ = self.checkForPinsAndChecks(endRow, endCol, allyColor, enemyColor) 
-                endPiece = self.board[endRow][endCol]
-                if (endPiece[0] != allyColor):
-                    if endPiece[1] == 'p' and  col != endCol:
-                        return True
-                    if endPiece[1] == 'K':
-                        return True
-                else:
-                    inCheck = False
-        return inCheck
-
-            
-
-
-
     def getKingMoves(self,row,col,moves):
-        
-        if self.WhiteToMove:
-            enemyColor = 'b'
-            allyColor = 'w'
-            startRow = self.whiteKingLocation[0]
-            startCol = self.whiteKingLocation[1]
-        else:
-            enemyColor = 'w'
-            allyColor = 'b'
-            startRow = self.blackKingLocation[0]
-            startCol = self.blackKingLocation[1]
-
         directions = ((-1,-1),(1,1),(1,-1),(-1,1),(-1,0),(1,0),(0,-1),(0,1)) #Wszystko
-        
+        allyColor = 'w' if self.WhiteToMove else 'b'
         for i in range(8):
             endRow = row + directions[i][0] 
             endCol = col + directions[i][1]
@@ -548,18 +578,15 @@ class GameState():
                     else:
                         self.blackKingLocation = (endRow, endCol)
                     
-                    inCheck, pins, checks = self.checkForPinsAndChecks(startRow, startCol, allyColor, enemyColor)
-                    inCheck = self.smallScanAroundKing(endRow, endCol, allyColor, enemyColor)
-                    
+                    inCheck, pins, checks = self.checkForPinsAndChecks()
+                    # print(inCheck,pins,checks)
                     if not inCheck:
                         moves.append(Move((row,col),(endRow,endCol),self.board))
 
                     if allyColor == 'w':
                         self.whiteKingLocation = (row,col)
                     else:
-                        self.blackKingLocation = (row,col) 
-
-         
+                        self.blackKingLocation = (row,col)          
 
     def getQueenMoves(self,row,col,moves):
         # self.getBishopMoves(row,col,moves)
@@ -591,6 +618,9 @@ class GameState():
                             break
                 else:       #Poza planszą
                     break
+
+
+
 
     def squareUnderAttack(self,row,col):
         self.WhiteToMove = not self.WhiteToMove             #Tura przeciwnika

@@ -1,7 +1,7 @@
 import sys
 from PyQt5.QtWidgets import QApplication, QMainWindow, QWidget, QLabel, QVBoxLayout, QHBoxLayout, QPushButton,QFileDialog, QDialog, QMessageBox, QTextEdit,QStyleFactory
 from PyQt5.QtGui import QPainter, QPixmap, QColor, QIcon, QFont, QPalette
-from PyQt5.QtCore import Qt, QTimer
+from PyQt5.QtCore import Qt, QTimer, QSize, QByteArray, QBuffer, QIODevice
 from multiprocessing import Process, Queue
 from threading import Thread
 
@@ -24,7 +24,7 @@ class MainGame(QDialog):
         super().__init__()
         self.playerOne = playerOne
         self.playerTwo = playerTwo
-        self.LeftLayout = QHBoxLayout(self)
+        self.MainLayout = QHBoxLayout(self)
         self.setFixedSize(int(1.7*BOARD_WIDTH), BOARD_HEIGHT+40)
         self.center()
         darkMode(self)
@@ -34,38 +34,35 @@ class MainGame(QDialog):
         # Dodaj niestandardowy widget do układu
         self.chessboard = ChessGraphicsQT(self, self.playerOne, self.playerTwo)
         self.chessboard.setFixedSize(BOARD_WIDTH, BOARD_HEIGHT)
-        self.LeftLayout.addWidget(self.chessboard)
+        self.MainLayout.addWidget(self.chessboard)
         self.chessboard.setFocus()
     
         #Text edit
-        
         font = self.text_edit.currentFont()
         font.setPointSize(13)
         self.text_edit.setFont(font)
         self.text_edit.setReadOnly(True)  # Ustaw tryb tylko do odczytu
-        self.text_edit.setFixedSize(200,BOARD_HEIGHT)
-        self.LeftLayout.addWidget(self.text_edit)
+        self.text_edit.setFixedSize(200, BOARD_HEIGHT)
+        self.MainLayout.addWidget(self.text_edit)
 
-        self.setLayout(self.LeftLayout)
+        self.setLayout(self.MainLayout)
         self.center()
 
-    
-
     def createButtons(self):
-        # self.ButtonLayout = QVBoxLayout(self)
-        # self.LeftLayout.addChildLayout(self.ButtonLayout)
+        self.buttonLayout = QVBoxLayout()  # Utwórz układ pionowy dla przycisków
         self.button_size = 150
-
 
         self.button = QPushButton("TEST", self)
         self.button.setFixedSize(self.button_size, self.button_size)
-        #self.button.clicked.connect()
-        self.LeftLayout.addWidget(self.button)
+        # self.button.clicked.connect()
+        self.buttonLayout.addWidget(self.button)
 
-        # self.new_game_butt = QPushButton("Nowa gra", self)
-        # self.new_game_butt.setFixedSize(self.button_size, self.button_size)
-        # # self.new_game_butt.clicked.connect()
-        # self.ButtonLayout.addWidget(self.new_game_butt)
+        self.new_game_butt = QPushButton("Nowa gra", self)
+        self.new_game_butt.setFixedSize(self.button_size, self.button_size)
+        # self.new_game_butt.clicked.connect()
+        self.buttonLayout.addWidget(self.new_game_butt)
+
+        self.MainLayout.addLayout(self.buttonLayout)  # Dodaj układ pionowy do głównego układu poziomego
 
     def append_text(self, text):
         self.text_edit.append(text)
@@ -131,9 +128,9 @@ class ChessGraphicsQT(QWidget):
             # Figury od razu w skali planszy
             pixmap = QPixmap("Figury_HD/" + piece + ".png")
             pixmap = pixmap.scaled(SQ_SIZE, SQ_SIZE)
-            label = QLabel()
-            label.setPixmap(pixmap)
-            IMAGES[piece] = label
+            ChessLabel = QLabel()
+            ChessLabel.setPixmap(pixmap)
+            IMAGES[piece] = ChessLabel
 
     def drawBoard(self):
         global colors
@@ -327,17 +324,38 @@ class StartScreen(QWidget):
         super().__init__()
         self.playerOne = None
         self.playerTwo = None
+        self.setFixedSize(400, 500)
+        
         self.Layout = QVBoxLayout(self)
         darkMode(self)
         self.createButtons()
 
     def createButtons(self):
-        self.label = QLabel("Super Chess")
-        self.label.setAlignment(Qt.AlignCenter)
+        self.ChessLabel = QLabel(self)
+        self.ChessLabel.setFixedSize(400, 300)
+        
+        # Utwórz QPixmap z obrazkiem
+        pixmap = QPixmap('Images/Wallpaper.png')
+        
+        # Narysuj tekst na QPixmap
+        painter = QPainter(pixmap)
+        painter.setPen(QColor('white'))
+        painter.setFont(QFont('Times', 100))
+        painter.drawText(pixmap.rect(), Qt.AlignCenter, "Super Chess")
+        painter.end()
+        
+        # Ustaw zmodyfikowany QPixmap na QLabel
+        self.ChessLabel.setPixmap(pixmap)
+        self.ChessLabel.setScaledContents(True) 
         font = QFont("Arial", 25)
         font2 = QFont("Arial", 12)
-        self.label.setFont(font)
+        self.ChessLabel.setFont(font2)
 
+
+        self.settings = QPushButton()
+        self.settings.setFixedSize(32, 32)
+        self.settings.setIcon(QIcon("Images/Gear.png"))
+        # self.settings.clicked.connect(self.clickedSettings)
 
         self.button0 = QPushButton("Online")
         self.button0.setFont(font2)
@@ -355,7 +373,8 @@ class StartScreen(QWidget):
         self.button3.setFont(font2)
         self.button3.clicked.connect(self.clickedAiVAi)
 
-        self.Layout.addWidget(self.label)
+        self.Layout.addWidget(self.settings)
+        self.Layout.addWidget(self.ChessLabel)
         self.Layout.addWidget(self.button0)
         self.Layout.addWidget(self.button1)
         self.Layout.addWidget(self.button2)
@@ -388,9 +407,7 @@ class StartScreen(QWidget):
             Game.setGeometry(750, 250, BOARD_WIDTH+500, BOARD_HEIGHT+100)
             Game.exec_()
         else:
-            self.label.setText("Wybierz tryb gry")
-
-
+            self.ChessLabel.setText("Wybierz tryb gry")
 
 class OnlineScreen(QWidget):
     def __init__(self):
@@ -419,6 +436,79 @@ def darkMode(window):
 
         # Ustawianie ciemnego stylu
         QApplication.setStyle(QStyleFactory.create('Fusion'))
+
+def lightMode(window):
+    window.light_palette = QPalette()
+    window.light_palette.setColor(QPalette.Window, QColor(255, 255, 255))  # Tło okna
+    window.light_palette.setColor(QPalette.WindowText, QColor(0, 0, 0))  # Tekst okna
+    window.light_palette.setColor(QPalette.Base, QColor(255, 255, 255))  # Tło tekstu
+    window.light_palette.setColor(QPalette.AlternateBase, QColor(240, 240, 240))  # Alternatywne tło
+    window.light_palette.setColor(QPalette.ToolTipBase, QColor(255, 255, 255))  # Tło podpowiedzi
+    window.light_palette.setColor(QPalette.ToolTipText, QColor(0, 0, 0))  # Tekst podpowiedzi
+    window.light_palette.setColor(QPalette.Text, QColor(0, 0, 0))  # Tekst
+    window.light_palette.setColor(QPalette.Button, QColor(240, 240, 240))  # Tło przycisku
+    window.light_palette.setColor(QPalette.ButtonText, QColor(0, 0, 0))  # Tekst przycisku
+    window.light_palette.setColor(QPalette.BrightText, QColor(255, 0, 0))  # Jasny tekst
+    window.light_palette.setColor(QPalette.Highlight, QColor(76, 163, 224))  # Kolor zaznaczenia
+    window.light_palette.setColor(QPalette.HighlightedText, QColor(255, 255, 255))  # Tekst zaznaczenia
+
+    # Ustawianie jasnego motywu
+    window.setPalette(window.light_palette)
+
+    # Ustawianie stylu Fusion
+    QApplication.setStyle(QStyleFactory.create('Fusion'))
+
+    # Stylizowanie przycisków i innych widżetów
+    window.setStyleSheet("""
+    QPushButton {
+        background-color: #E0E0E0;
+        border: none;
+        border-radius: 100px;  # Zaokrąglone rogi
+        color: #212121;
+        padding: 10px 20px;
+    }
+    QPushButton:hover {
+        background-color: #BDBDBD;
+    }
+    QPushButton:pressed {
+        background-color: #9E9E9E;
+    }
+    QTextEdit {
+        background-color: #FFFFFF;
+        border: 1px solid #E0E0E0;
+        border-radius: 4px;
+        color: #212121;
+        padding: 10px;
+    }
+    QScrollBar:vertical {
+        background-color: #FAFAFA;
+        width: 12px;
+        margin: 0px 3px 0px 3px;
+        border-radius: 4px;
+    }
+    QScrollBar::handle:vertical {
+        background-color: #E0E0E0;
+        min-height: 20px;
+        border-radius: 4px;
+    }
+    QScrollBar::add-line:vertical, QScrollBar::sub-line:vertical {
+        background: none;
+        height: 0px;
+        width: 0px;
+    }
+    QScrollBar::add-page:vertical, QScrollBar::sub-page:vertical {
+        background: none;
+    }
+    """)
+
+
+
+
+
+
+
+
+
 
 if __name__ == '__main__':
     app = QApplication(sys.argv)

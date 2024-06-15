@@ -60,10 +60,30 @@ piecePositionScores = {"N": knightScores, "B": bishopScores, "Q": queenScores, "
 
 CHECKMATE = 1000
 STALEMATE = 0
-DEPTH = 4
+DEPTH = 1
 '''
 A positive score is good for white, a negative score is good for black
 '''
+
+class BonesAI:
+    def __init__(self, choice, gs, validMoves, returnQueue = None):
+        self.gs = gs
+        self.validMoves = validMoves
+        self.choice = choice
+        self.algorithms = {1:findRandomMove, 
+                           2:greedyAlgorithm, 
+                           3:minMaxAlgorithm2depth, 
+                           4:minMaxRecursiveCaller_, 
+                           5:negaMaxCaller_, 
+                           6:negaMaxAlphaBetaCaller_}
+        
+        if choice == 6:
+            self.algorithms[choice](gs,validMoves)
+
+        else:
+            self.algorithms[choice](gs,validMoves, returnQueue)
+
+
 
 def scoreMaterial(board):
     score = 0
@@ -111,7 +131,7 @@ def scoreBoard(gs):
 
 
 #Simple algorithms
-def findRandomMove(validMoves):
+def findRandomMove(gs, validMoves):
     return validMoves[random.randint(0, len(validMoves)-1)]
 
 def greedyAlgorithm(gs, validMoves):

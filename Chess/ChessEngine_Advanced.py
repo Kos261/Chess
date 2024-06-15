@@ -2,26 +2,26 @@
 
 class GameState():
     def __init__(self, GUI):
-        #Pierwsza litera kolor, druga rodzaj R-rook, N-knight, B-bishop, Q-queen, K-king "--" puste
-        # self.board = [
-        #     ["bR","bN","bB","bQ","bK","bB","bN","bR"],
-        #     ["bp","bp","bp","bp","bp","bp","bp","bp"],
-        #     ["--","--","--","--","--","--","--","--"],
-        #     ["--","--","--","--","--","--","--","--"],
-        #     ["--","--","--","--","--","--","--","--"],
-        #     ["--","--","--","--","--","--","--","--"],
-        #     ["wp","wp","wp","wp","wp","wp","wp","wp"],
-        #     ["wR","wN","wB","wQ","wK","wB","wN","wR"]]
-        
+        # Pierwsza litera kolor, druga rodzaj R-rook, N-knight, B-bishop, Q-queen, K-king "--" puste
         self.board = [
-          ["--","--","--","--","--","--","--","bR"],
-          ["--","--","--","--","--","--","bK","--"],
-          ["--","--","--","--","--","--","--","--"],
-          ["--","--","--","--","bp","bp","bp","--"],
-          ["--","--","wB","--","--","--","--","--"],
-          ["--","--","--","--","wK","--","--","--"],
-          ["--","--","--","--","--","--","bR","--"],
-          ["--","--","--","--","--","--","--","--"]]
+            ["bR","bN","bB","bQ","bK","bB","bN","bR"],
+            ["bp","bp","bp","bp","bp","bp","bp","bp"],
+            ["--","--","--","--","--","--","--","--"],
+            ["--","--","--","--","--","--","--","--"],
+            ["--","--","--","--","--","--","--","--"],
+            ["--","--","--","--","--","--","--","--"],
+            ["wp","wp","wp","wp","wp","wp","wp","wp"],
+            ["wR","wN","wB","wQ","wK","wB","wN","wR"]]
+        
+        # self.board = [
+        #   ["--","--","--","--","--","--","--","bR"],
+        #   ["--","--","--","--","--","--","bK","--"],
+        #   ["--","--","--","--","--","--","--","--"],
+        #   ["--","--","--","--","bp","bp","bp","--"],
+        #   ["--","--","wB","--","--","--","--","--"],
+        #   ["--","--","--","--","wK","--","--","--"],
+        #   ["--","--","--","--","--","--","bR","--"],
+        #   ["--","--","--","--","--","--","--","--"]]
 
         self.GUI = GUI
 
@@ -39,9 +39,10 @@ class GameState():
         self.checks = []
         self.enpassantPossible = ()
         self.enpassantPossibleLog = [self.enpassantPossible]
+
         self.currentCastlingRight = CastleRights(True,True,True,True)
-        self.currentCastlingRight = CastleRights(False,False,False,False)
-        self.GUI.append_text("WARNING \nCASTLING OFF!!!!")
+        # self.currentCastlingRight = CastleRights(False,False,False,False)
+        # self.GUI.append_text("WARNING \nCASTLING OFF!!!!")
 
         self.castleRightsLog = [CastleRights(self.currentCastlingRight.wKs,self.currentCastlingRight.bKs,
                                              self.currentCastlingRight.wQs,self.currentCastlingRight.bQs)]
@@ -537,7 +538,7 @@ class GameState():
     def getBishopMoves(self,row,col,moves):
         piecePinned = False
         pinDirection = ()
-        self.GUI.append_text(str(self.pins))
+        # self.GUI.append_text(str(self.pins))
         for i in range(len(self.pins)-1,-1,-1):
             if self.pins[i][0] == row and self.pins[i][1] == col:
                 piecePinned = True

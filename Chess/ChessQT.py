@@ -1,14 +1,16 @@
 import sys
-from PyQt5.QtWidgets import QApplication, QMainWindow, QWidget, QLabel, QVBoxLayout, QHBoxLayout, QPushButton,QFileDialog, QDialog, QMessageBox, QTextEdit,QStyleFactory
+from PyQt5.QtWidgets import QApplication, QMainWindow, QWidget, QLabel, QVBoxLayout, QHBoxLayout, QPushButton,QFileDialog, QDialog, QMessageBox, QTextEdit,QStyleFactory, QComboBox
 from PyQt5.QtGui import QPainter, QPixmap, QColor, QIcon, QFont, QPalette
 from PyQt5.QtCore import Qt, QTimer, QSize, QByteArray, QBuffer, QIODevice
 from multiprocessing import Process, Queue
 from threading import Thread
 
+from Themes_and_animations import *
 from ChessEngine_Advanced import GameState, Move
 import SmartMoveFinder
 import random
 import pygame
+
 
 BOARD_WIDTH = BOARD_HEIGHT = 600
 MOVE_LOG_PANEL_WIDTH = 200
@@ -17,17 +19,18 @@ DIMENSION = 8
 SQ_SIZE = BOARD_HEIGHT//DIMENSION
 MAX_FPS = 20
 IMAGES = {}
-
+THEMES = {}
 
 class MainGame(QDialog):
-    def __init__(self, playerOne, playerTwo):
+    def __init__(self, playerOne, playerTwo, theme_func):
         super().__init__()
+
         self.playerOne = playerOne
         self.playerTwo = playerTwo
         self.MainLayout = QHBoxLayout(self)
         self.setFixedSize(int(1.7*BOARD_WIDTH), BOARD_HEIGHT+40)
         self.center()
-        darkMode(self)
+        self.theme = theme_func(self)
         self.createButtons()
         self.text_edit = QTextEdit()
 
@@ -54,11 +57,13 @@ class MainGame(QDialog):
 
         self.button = QPushButton("TEST", self)
         self.button.setFixedSize(self.button_size, self.button_size)
+        self.button.setStyleSheet(self.theme)
         # self.button.clicked.connect()
         self.buttonLayout.addWidget(self.button)
 
         self.new_game_butt = QPushButton("Nowa gra", self)
         self.new_game_butt.setFixedSize(self.button_size, self.button_size)
+        self.new_game_butt.setStyleSheet(self.theme)
         # self.new_game_butt.clicked.connect()
         self.buttonLayout.addWidget(self.new_game_butt)
 
@@ -134,7 +139,7 @@ class ChessGraphicsQT(QWidget):
 
     def drawBoard(self):
         global colors
-        colors = [QColor(180,180,150), QColor(40,40,50)]
+        colors = palettes[1]
 
         for row in range(DIMENSION):
             for col in range(DIMENSION):
@@ -324,11 +329,13 @@ class StartScreen(QWidget):
         super().__init__()
         self.playerOne = None
         self.playerTwo = None
-        self.setFixedSize(400, 500)
+        self.setFixedSize(430, 750)
         
         self.Layout = QVBoxLayout(self)
-        darkMode(self)
+        self.theme_func = darkMode
+        self.theme = darkMode(self)
         self.createButtons()
+        
 
     def createButtons(self):
         self.ChessLabel = QLabel(self)
@@ -337,11 +344,12 @@ class StartScreen(QWidget):
         # Utwórz QPixmap z obrazkiem
         pixmap = QPixmap('Images/Wallpaper.png')
         
+        
         # Narysuj tekst na QPixmap
         painter = QPainter(pixmap)
         painter.setPen(QColor('white'))
-        painter.setFont(QFont('Times', 100))
-        painter.drawText(pixmap.rect(), Qt.AlignCenter, "Super Chess")
+        painter.setFont(QFont('Seriff', 150))
+        painter.drawText(pixmap.rect(), Qt.AlignCenter, "CHESS")
         painter.end()
         
         # Ustaw zmodyfikowany QPixmap na QLabel
@@ -352,33 +360,68 @@ class StartScreen(QWidget):
         self.ChessLabel.setFont(font2)
 
 
+        self.theme_combo = QComboBox()
+        self.theme_combo.addItem("Light Mode")
+        self.theme_combo.addItem("Dark Mode")
+        self.theme_combo.addItem("Green Neon")
+        self.theme_combo.addItem("BridgerTone")
+        self.theme_combo.currentIndexChanged.connect(self.changeTheme)
+
+
         self.settings = QPushButton()
         self.settings.setFixedSize(32, 32)
         self.settings.setIcon(QIcon("Images/Gear.png"))
         # self.settings.clicked.connect(self.clickedSettings)
 
-        self.button0 = QPushButton("Online")
+        self.button0 = QPushButton("New gamemode soon...")
         self.button0.setFont(font2)
-        self.button0.clicked.connect(self.clickedOnline)
+        self.button0.setStyleSheet(self.theme)
+        # self.button0.clicked.connect(self.clickedOnline)
 
         self.button1 = QPushButton("Player1 vs Player2")
         self.button1.setFont(font2)
+        self.button1.setStyleSheet(self.theme)
         self.button1.clicked.connect(self.clickedPVP)
 
         self.button2 = QPushButton("Player vs AI")
         self.button2.setFont(font2)
+        self.button2.setStyleSheet(self.theme)
         self.button2.clicked.connect(self.clickedPVAi)
         
         self.button3 = QPushButton("AI1 vs AI2")
         self.button3.setFont(font2)
+        self.button3.setStyleSheet(self.theme)
         self.button3.clicked.connect(self.clickedAiVAi)
 
+        self.Layout.addWidget(self.theme_combo)
         self.Layout.addWidget(self.settings)
         self.Layout.addWidget(self.ChessLabel)
-        self.Layout.addWidget(self.button0)
+        # self.Layout.addWidget(self.button0)
         self.Layout.addWidget(self.button1)
         self.Layout.addWidget(self.button2)
         self.Layout.addWidget(self.button3)
+
+
+    def changeTheme(self, index):
+        if index == 0:
+            self.theme_func = lightMode
+            self.theme = lightMode(self)
+        elif index == 1:
+            self.theme_func = darkMode
+            self.theme = darkMode(self)
+        elif index == 2:
+            self.theme_func = neonMode
+            self.theme = neonMode(self)
+        elif index == 3:
+            self.theme_func = bridgerToneMode
+            self.theme = bridgerToneMode(self)
+
+        self.button0.setStyleSheet(self.theme)
+        self.button1.setStyleSheet(self.theme)
+        self.button2.setStyleSheet(self.theme)
+        self.button3.setStyleSheet(self.theme)
+
+
 
     def clickedPVP(self):
         self.playerOne = True
@@ -403,7 +446,7 @@ class StartScreen(QWidget):
     def startGame(self):
         if (self.playerOne != None) and (self.playerTwo != None):
             self.close()
-            Game = MainGame(self.playerOne, self.playerTwo)
+            Game = MainGame(self.playerOne, self.playerTwo, self.theme_func)
             Game.setGeometry(750, 250, BOARD_WIDTH+500, BOARD_HEIGHT+100)
             Game.exec_()
         else:
@@ -413,93 +456,6 @@ class OnlineScreen(QWidget):
     def __init__(self):
         super().__init__()
         darkMode(self)
-
-
-
-
-def darkMode(window):
-        window.dark_palette = QPalette()
-        window.dark_palette.setColor(QPalette.Window, QColor(53, 53, 53))
-        window.dark_palette.setColor(QPalette.WindowText, Qt.white)
-        window.dark_palette.setColor(QPalette.Button, QColor(53, 53, 53))
-        window.dark_palette.setColor(QPalette.ButtonText, Qt.white)
-        window.dark_palette.setColor(QPalette.Base, QColor(25, 25, 25))
-        window.dark_palette.setColor(QPalette.AlternateBase, QColor(53, 53, 53))
-        window.dark_palette.setColor(QPalette.ToolTipBase, Qt.white)
-        window.dark_palette.setColor(QPalette.ToolTipText, Qt.white)
-        window.dark_palette.setColor(QPalette.Text, Qt.white)
-        window.dark_palette.setColor(QPalette.Highlight, QColor(142, 45, 197))
-        window.dark_palette.setColor(QPalette.HighlightedText, Qt.black)
-
-        # Ustawianie ciemnego motywu
-        window.setPalette(window.dark_palette)
-
-        # Ustawianie ciemnego stylu
-        QApplication.setStyle(QStyleFactory.create('Fusion'))
-
-def lightMode(window):
-    window.light_palette = QPalette()
-    window.light_palette.setColor(QPalette.Window, QColor(255, 255, 255))  # Tło okna
-    window.light_palette.setColor(QPalette.WindowText, QColor(0, 0, 0))  # Tekst okna
-    window.light_palette.setColor(QPalette.Base, QColor(255, 255, 255))  # Tło tekstu
-    window.light_palette.setColor(QPalette.AlternateBase, QColor(240, 240, 240))  # Alternatywne tło
-    window.light_palette.setColor(QPalette.ToolTipBase, QColor(255, 255, 255))  # Tło podpowiedzi
-    window.light_palette.setColor(QPalette.ToolTipText, QColor(0, 0, 0))  # Tekst podpowiedzi
-    window.light_palette.setColor(QPalette.Text, QColor(0, 0, 0))  # Tekst
-    window.light_palette.setColor(QPalette.Button, QColor(240, 240, 240))  # Tło przycisku
-    window.light_palette.setColor(QPalette.ButtonText, QColor(0, 0, 0))  # Tekst przycisku
-    window.light_palette.setColor(QPalette.BrightText, QColor(255, 0, 0))  # Jasny tekst
-    window.light_palette.setColor(QPalette.Highlight, QColor(76, 163, 224))  # Kolor zaznaczenia
-    window.light_palette.setColor(QPalette.HighlightedText, QColor(255, 255, 255))  # Tekst zaznaczenia
-
-    # Ustawianie jasnego motywu
-    window.setPalette(window.light_palette)
-
-    # Ustawianie stylu Fusion
-    QApplication.setStyle(QStyleFactory.create('Fusion'))
-
-    # Stylizowanie przycisków i innych widżetów
-    window.setStyleSheet("""
-    QPushButton {
-        background-color: #E0E0E0;
-        border: none;
-        border-radius: 100px;  # Zaokrąglone rogi
-        color: #212121;
-        padding: 10px 20px;
-    }
-    QPushButton:hover {
-        background-color: #BDBDBD;
-    }
-    QPushButton:pressed {
-        background-color: #9E9E9E;
-    }
-    QTextEdit {
-        background-color: #FFFFFF;
-        border: 1px solid #E0E0E0;
-        border-radius: 4px;
-        color: #212121;
-        padding: 10px;
-    }
-    QScrollBar:vertical {
-        background-color: #FAFAFA;
-        width: 12px;
-        margin: 0px 3px 0px 3px;
-        border-radius: 4px;
-    }
-    QScrollBar::handle:vertical {
-        background-color: #E0E0E0;
-        min-height: 20px;
-        border-radius: 4px;
-    }
-    QScrollBar::add-line:vertical, QScrollBar::sub-line:vertical {
-        background: none;
-        height: 0px;
-        width: 0px;
-    }
-    QScrollBar::add-page:vertical, QScrollBar::sub-page:vertical {
-        background: none;
-    }
-    """)
 
 
 

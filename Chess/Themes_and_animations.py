@@ -138,6 +138,8 @@ class StartScreenBoard(QWidget):
         text_rect = QRect(rect_x, rect_y, rect_width, rect_height)
         self.painter.drawText(text_rect, Qt.AlignCenter, "CHESS")
 
+        self.painter.end()
+
 
 
 def neonMode(window):

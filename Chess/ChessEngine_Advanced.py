@@ -383,6 +383,13 @@ class GameState():
         if len(figs) == 2:
             self.staleMate = True
 
+    def check3MovesForStalemate(self):
+        if len(self.moveLog) >= 6:
+            if self.moveLog[-1] == self.moveLog[-3] and \
+               self.moveLog[-2] == self.moveLog[-4] and \
+               self.moveLog[-3] == self.moveLog[-5]:
+                self.staleMate = True
+                
 
     def getPawnMoves(self,row,col,moves):
         piecePinned = False

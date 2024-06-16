@@ -1,17 +1,21 @@
 from PyQt5.QtWidgets import QApplication, QMainWindow, QWidget, QLabel, QVBoxLayout, QHBoxLayout, QPushButton,QFileDialog, QDialog, QMessageBox, QTextEdit,QStyleFactory
 from PyQt5.QtGui import QPainter, QPixmap, QColor, QIcon, QFont, QPalette, QTransform
-from PyQt5.QtCore import Qt, QTimer, QSize, QByteArray, QBuffer, QIODevice
+from PyQt5.QtCore import Qt, QTimer, QSize, QByteArray, QBuffer, QIODevice, QRect
 import sys
+import random
+import time
 
 SQ_SIZE = 50
-DIM_ROW = 10
+DIM_ROW = 6
 DIM_COL = 10
 IMAGES = {}
 
 palettes = {
-    1: [QColor(180, 180, 150), QColor(40, 40, 50)],   # Default
-    2: [QColor(53, 53, 53), QColor(25, 25, 25)],      # Dark Mode
-    3: [QColor(215, 215, 215), QColor(225, 225, 225)] # Light Mode
+    "Default": [QColor(180, 180, 150), QColor(40, 40, 50)],   
+    "DarkMode": [QColor(53, 53, 53), QColor(25, 25, 25)],      
+    "LightMode": [QColor(215, 215, 215), QColor(225, 225, 225)],
+    "NeonMode": [QColor(0, 0, 0), QColor(57, 255, 20)],
+    "BridgerTone":[QColor(0, 51, 102), QColor(102, 204, 255)]
 }
 
 
@@ -20,6 +24,7 @@ class ChessPiece:
         self.piece = piece
         self.x = start_col * SQ_SIZE
         self.y = start_row * SQ_SIZE
+        self.speed = random.randrange(1,10)
         self.angle = 0
 
 
@@ -27,61 +32,111 @@ class StartScreenBoard(QWidget):
     def __init__(self):
         super().__init__()
         self.loadImages()
-        self.pieces = [
-            # ChessPiece('bp', 0, 0),
-            ChessPiece('bN', 0, 0),
-            # ChessPiece('bB', 2, 0),
-            # ChessPiece('bR', 3, 0),
-            # ChessPiece('bQ', 4, 0),
-            # ChessPiece('bK', 5, 0)
+        self.black_pieces = [
+            ChessPiece('bp', 0, 0),
+            ChessPiece('bN', 1, 0),
+            ChessPiece('bB', 2, 0),
+            ChessPiece('bR', 3, 0),
+            ChessPiece('bQ', 4, 0),
+            ChessPiece('bK', 5, 0)
+        ]
+        self.white_pieces = [
+            ChessPiece('wp', 0, DIM_COL-1),
+            ChessPiece('wN', 1, DIM_COL-1),
+            ChessPiece('wB', 2, DIM_COL-1),
+            ChessPiece('wR', 3, DIM_COL-1),
+            ChessPiece('wQ', 4, DIM_COL-1),
+            ChessPiece('wK', 5, DIM_COL-1)
         ]
 
+        self.chessboard_color = palettes['DarkMode']
+
         self.setWindowTitle('Szachownica')
-        self.setGeometry(100, 100, DIM_COL * SQ_SIZE, DIM_ROW * SQ_SIZE)
+        self.setFixedSize(DIM_COL * SQ_SIZE, DIM_ROW * SQ_SIZE)
+        
         self.timer = QTimer(self)
-        self.timer.timeout.connect(self.update_animation)
-        self.timer.start(60)  # 50 ms for smooth animation
+        self.timer.timeout.connect(self.update_black_animation)
+        self.timer.timeout.connect(self.update_white_animation)
+        self.timer.start(50)  # 50 ms for smooth animation
 
     def loadImages(self):
-        piece_names = ["bR", "bN", "bB", "bQ", "bK", "bp", "wR", "wN", "wB", "wQ", "wK", "wp"]
-        
-        for piece in piece_names:
+        pieces = ["bR", "bN", "bB", "bQ", "bK", "bp", "wR", "wN", "wB", "wQ", "wK", "wp"]
+        for piece in pieces:
             # Ładujemy figury i skalujemy je do rozmiaru pola
             pixmap = QPixmap("Figury_HD/" + piece + ".png")
             pixmap = pixmap.scaled(SQ_SIZE, SQ_SIZE, Qt.KeepAspectRatio)
             IMAGES[piece] = pixmap
 
-    def update_animation(self):
-        for piece in self.pieces:
-            # piece.x += 1  # Ruch w prawo
-            # if piece.x > self.width():
-            #     piece.x = -SQ_SIZE  # Powrót na lewą stronę
-            piece.angle += 5  # Obrót o 5 stopni
+    def update_black_animation(self):
+        for piece in self.black_pieces:
+            
+            piece.x += piece.speed  # Ruch w prawo
+            if piece.x > self.width():
+                piece.x = -SQ_SIZE  # Powrót na lewą stronę
+                
+            piece.angle += 10  # Obrót o 5 stopni
             if piece.angle >= 360:
                 piece.angle = 0
+
+        self.update()
+
+    def update_white_animation(self):
+        for piece in self.white_pieces:
+            
+            piece.x -= piece.speed  # Ruch w lewo
+            if piece.x < -SQ_SIZE/2:
+                piece.x = SQ_SIZE + self.width()  # Powrót na prawą stronę
+                
+            piece.angle -= 10  # Obrót o 5 stopni
+            if piece.angle >= 360:
+                piece.angle = 0
+
         self.update()
 
     def paintEvent(self, event):
-        painter = QPainter(self)
-        
+        self.painter = QPainter(self)
+        translucent_white = QColor(255, 255, 255, 100)
         # Kolory szachownicy
-        light_color = QColor(255, 255, 255)
-        dark_color = QColor(0, 0, 0)
+        light_color = self.chessboard_color[0]
+        dark_color = self.chessboard_color[1]
         
         # Rysujemy szachownicę
         for row in range(DIM_ROW):
             for col in range(DIM_COL):
                 color = light_color if (row + col) % 2 == 0 else dark_color
-                painter.fillRect(col * SQ_SIZE, row * SQ_SIZE, SQ_SIZE, SQ_SIZE, color)
+
+                self.painter.fillRect(col * SQ_SIZE, row * SQ_SIZE, SQ_SIZE, SQ_SIZE, color)
                 
         # Rysujemy figury
-        for piece in self.pieces:
+        for piece in self.black_pieces:
             pixmap = IMAGES[piece.piece]
+            self.painter.save()
             transform = QTransform().translate(piece.x + SQ_SIZE / 2, piece.y + SQ_SIZE / 2).rotate(piece.angle).translate(-SQ_SIZE / 2, -SQ_SIZE / 2)
-            painter.setTransform(transform)
-            painter.drawPixmap(piece.x, piece.y, SQ_SIZE, SQ_SIZE, pixmap)
+            self.painter.setTransform(transform, combine=False)
+            self.painter.drawPixmap(0, 0, SQ_SIZE, SQ_SIZE, pixmap)
+            self.painter.restore()
 
-        painter.end()
+        for piece in self.white_pieces:
+            pixmap = IMAGES[piece.piece]
+            self.painter.save() 
+            transform = QTransform().translate(piece.x + SQ_SIZE / 2, piece.y + SQ_SIZE / 2).rotate(piece.angle).translate(-SQ_SIZE / 2, -SQ_SIZE / 2)
+            self.painter.setTransform(transform, combine=False)
+            self.painter.drawPixmap(0, 0, SQ_SIZE, SQ_SIZE, pixmap)
+            self.painter.restore()
+
+        rect_width = self.width()
+        rect_height = 100
+        rect_x = (self.width() - rect_width) // 2
+        rect_y = (self.height() - rect_height) // 2
+        self.painter.setBrush(translucent_white)
+        self.painter.setPen(Qt.NoPen)
+        self.painter.drawRect(rect_x, rect_y, rect_width, rect_height)
+
+        # Rysujemy napis "CHESS" na środku prostokąta
+        self.painter.setPen(QColor('white'))
+        self.painter.setFont(QFont('Seriff', 30))
+        text_rect = QRect(rect_x, rect_y, rect_width, rect_height)
+        self.painter.drawText(text_rect, Qt.AlignCenter, "CHESS")
 
 
 
@@ -126,7 +181,7 @@ def neonMode(window):
             color: #39FF14;
         }
         """
-    
+    window.chessboard_color = palettes["NeonMode"]
     return styleSheet
 
 def darkMode(window):
@@ -181,6 +236,7 @@ def darkMode(window):
         #     padding: 10px;
         #     }
         # """)
+    window.chessboard_color = palettes["DarkMode"]
     return styleSheet
 
 def lightMode(window):
@@ -226,6 +282,7 @@ def lightMode(window):
             color: #FFFFFF;
         }
         """
+    window.chessboard_color = palettes["LightMode"]
     return styleSheet
 
 def bridgerToneMode(window):
@@ -270,15 +327,17 @@ def bridgerToneMode(window):
             color: #FFFFFF;
         }
     """
+    window.chessboard_color = palettes["BridgerTone"]
     return styleSheet
 
 
 
 if __name__ == '__main__':
     app = QApplication(sys.argv)
-
     window = StartScreenBoard()
     window.show()
 
-    sys.exit(app.exec_())
+    # Ustawienie timera na 5000 ms (5 sekund), aby wywołać neonMode
+    QTimer.singleShot(5000, lambda: neonMode(window))
 
+    sys.exit(app.exec_())

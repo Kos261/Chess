@@ -30,6 +30,7 @@ class MainGame(QDialog):
         self.MainLayout = QHBoxLayout(self)
         self.setFixedSize(int(1.7*BOARD_WIDTH), BOARD_HEIGHT+40)
         self.center()
+        self.chessboard_colors = None
         self.theme = theme_func(self)
         self.createButtons()
         self.text_edit = QTextEdit()
@@ -82,6 +83,7 @@ class MainGame(QDialog):
 class ChessGraphicsQT(QWidget):
     def __init__(self, GUI, playerOne, playerTwo):
         super().__init__()
+        self.chessboard_color = GUI.chessboard_color
         self.loadImages()
         self.GUI = GUI
         self.gs = GameState(GUI)
@@ -133,17 +135,15 @@ class ChessGraphicsQT(QWidget):
             # Figury od razu w skali planszy
             pixmap = QPixmap("Figury_HD/" + piece + ".png")
             pixmap = pixmap.scaled(SQ_SIZE, SQ_SIZE)
-            ChessLabel = QLabel()
-            ChessLabel.setPixmap(pixmap)
-            IMAGES[piece] = ChessLabel
+            ChessStartBoard = QLabel()
+            ChessStartBoard.setPixmap(pixmap)
+            IMAGES[piece] = ChessStartBoard
 
     def drawBoard(self):
-        global colors
-        colors = palettes[1]
-
+        
         for row in range(DIMENSION):
             for col in range(DIMENSION):
-                color = colors[((row + col) % 2)]
+                color = self.chessboard_color[((row + col) % 2)]
                 
                 if (row + col) % 2 == 0:
                     self.painter.fillRect(col * SQ_SIZE, row * SQ_SIZE, SQ_SIZE, SQ_SIZE, color)
@@ -329,36 +329,18 @@ class StartScreen(QWidget):
         super().__init__()
         self.playerOne = None
         self.playerTwo = None
-        self.setFixedSize(430, 750)
+        self.setFixedSize(550, 750)
         
         self.Layout = QVBoxLayout(self)
         self.theme_func = darkMode
         self.theme = darkMode(self)
         self.createButtons()
         
-
     def createButtons(self):
-        self.ChessLabel = QLabel(self)
-        self.ChessLabel.setFixedSize(400, 300)
+        self.ChessStartBoard =  StartScreenBoard()
         
-        # Utwórz QPixmap z obrazkiem
-        pixmap = QPixmap('Images/Wallpaper.png')
-        
-        
-        # Narysuj tekst na QPixmap
-        painter = QPainter(pixmap)
-        painter.setPen(QColor('white'))
-        painter.setFont(QFont('Seriff', 150))
-        painter.drawText(pixmap.rect(), Qt.AlignCenter, "CHESS")
-        painter.end()
-        
-        # Ustaw zmodyfikowany QPixmap na QLabel
-        self.ChessLabel.setPixmap(pixmap)
-        self.ChessLabel.setScaledContents(True) 
         font = QFont("Arial", 25)
         font2 = QFont("Arial", 12)
-        self.ChessLabel.setFont(font2)
-
 
         self.theme_combo = QComboBox()
         self.theme_combo.addItem("Light Mode")
@@ -395,12 +377,11 @@ class StartScreen(QWidget):
 
         self.Layout.addWidget(self.theme_combo)
         self.Layout.addWidget(self.settings)
-        self.Layout.addWidget(self.ChessLabel)
-        # self.Layout.addWidget(self.button0)
+        self.Layout.addWidget(self.ChessStartBoard)
+        self.Layout.addWidget(self.button0)
         self.Layout.addWidget(self.button1)
         self.Layout.addWidget(self.button2)
         self.Layout.addWidget(self.button3)
-
 
     def changeTheme(self, index):
         if index == 0:
@@ -416,12 +397,11 @@ class StartScreen(QWidget):
             self.theme_func = bridgerToneMode
             self.theme = bridgerToneMode(self)
 
+        self.ChessStartBoard.chessboard_color = self.chessboard_color
         self.button0.setStyleSheet(self.theme)
         self.button1.setStyleSheet(self.theme)
         self.button2.setStyleSheet(self.theme)
         self.button3.setStyleSheet(self.theme)
-
-
 
     def clickedPVP(self):
         self.playerOne = True
@@ -450,7 +430,7 @@ class StartScreen(QWidget):
             Game.setGeometry(750, 250, BOARD_WIDTH+500, BOARD_HEIGHT+100)
             Game.exec_()
         else:
-            self.ChessLabel.setText("Wybierz tryb gry")
+            self.ChessStartBoard.setText("Wybierz tryb gry")
 
 class OnlineScreen(QWidget):
     def __init__(self):

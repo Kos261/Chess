@@ -14,7 +14,7 @@ palettes = {
     "Default": [QColor(180, 180, 150), QColor(40, 40, 50)],   
     "DarkMode": [QColor(53, 53, 53), QColor(25, 25, 25)],      
     "LightMode": [QColor(215, 215, 215), QColor(225, 225, 225)],
-    "NeonMode": [QColor(0, 0, 0), QColor(57, 255, 20)],
+    "NeonMode": [QColor(10, 40, 10), QColor(57, 255, 20)],
     "BridgerTone":[QColor(0, 51, 102), QColor(102, 204, 255)]
 }
 
@@ -63,7 +63,7 @@ class StartScreenBoard(QWidget):
         pieces = ["bR", "bN", "bB", "bQ", "bK", "bp", "wR", "wN", "wB", "wQ", "wK", "wp"]
         for piece in pieces:
             # Ładujemy figury i skalujemy je do rozmiaru pola
-            pixmap = QPixmap("Figury_HD/" + piece + ".png")
+            pixmap = QPixmap("Figury/" + piece + ".png")
             pixmap = pixmap.scaled(SQ_SIZE, SQ_SIZE, Qt.KeepAspectRatio)
             IMAGES[piece] = pixmap
 
@@ -163,6 +163,17 @@ def neonMode(window):
     QApplication.setStyle(QStyleFactory.create('Fusion'))
     # window.button.setStyleSheet()
     styleSheet = """
+        QMessageBox {
+            background-color: #000000; 
+            color: #39FF14;            
+            font-family: Arial, sans-serif; 
+            font-size: 13pt;           
+        }
+
+        QMessageBox QLabel {
+            color: #39FF14;           
+        }
+
         QPushButton {
             background-color: #000000;
             border: 2px solid #39FF14;
@@ -208,6 +219,16 @@ def darkMode(window):
 
     # Stylizacja przycisku
     styleSheet = """
+        QMessageBox {
+            background-color: #2E2E2E; /* Ciemnoszare tło */
+            color: #FFFFFF;            /* Biały tekst */
+            font-family: Arial, sans-serif; /* Dodanie niestandardowej czcionki */
+            font-size: 13pt;           /* Rozmiar czcionki */
+        }
+
+        QMessageBox QLabel {
+            color: #FFFFFF;            /* Biały tekst dla QLabel */
+        }
         QPushButton {
             background-color: #505050;  /* Ciemnoszary */
             border: 2px solid #757575; /* Szary obramowanie */
@@ -264,6 +285,16 @@ def lightMode(window):
     # Stylizacja przycisku
     # window.button.setStyleSheet()
     styleSheet = """
+        QMessageBox {
+            background-color: #FFFFFF; 
+            color: #2196F3;            
+            font-family: Arial, sans-serif; 
+            font-size: 13pt;
+        }
+
+        QMessageBox QLabel {
+            color: #2196F3;           
+        }
         QPushButton {
             background-color: #FFFFFF;
             border: 2px solid #2196F3;
@@ -310,22 +341,32 @@ def bridgerToneMode(window):
     # Stylizacja przycisku
     # window.button.setStyleSheet()
     styleSheet = """
+        QMessageBox {
+            background-color: #22485A; 
+            color: #FFFFFF;            
+            font-family: Arial, sans-serif; 
+            font-size: 13pt;
+        }
+
+        QMessageBox QLabel {
+            color: #FFFFFF;           
+        }
         QPushButton {
-            background-color: #22485A;  /* Jaśniejszy turkusowy kolor - RGB(34, 72, 90) */
-            border: 2px solid #172437;  /* RGB(23, 36, 55) */
-            border-radius: 30px;  /* Zaokrąglone rogi */
+            background-color: #22485A;  
+            border: 2px solid #172437;  
+            border-radius: 30px;
             color: #FFFFFF;
             padding: 10px 20px;
             font-weight: bold;
             font-family: Arial, sans-serif;
-            font-size: 13pt; /* Rozmiar czcionki */
+            font-size: 13pt; 
         }
         QPushButton:hover {
-            background-color: #172437;  /* RGB(23, 36, 55) */
+            background-color: #172437;  
             color: #FFFFFF;
         }
         QPushButton:pressed {
-            background-color: #0F1925;  /* RGB(15, 25, 37) */
+            background-color: #0F1925;  
             color: #FFFFFF;
         }
     """

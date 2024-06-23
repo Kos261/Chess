@@ -29,7 +29,6 @@ class MainGame(QDialog):
         self.playerTwo = playerTwo
         self.MainLayout = QHBoxLayout(self)
         self.setFixedSize(int(1.7*BOARD_WIDTH), BOARD_HEIGHT+40)
-        self.center()
         self.chessboard_colors = None
         self.theme = theme_func(self)
         self.createButtons()
@@ -48,27 +47,53 @@ class MainGame(QDialog):
         self.text_edit.setReadOnly(True)  # Ustaw tryb tylko do odczytu
         self.text_edit.setFixedSize(200, BOARD_HEIGHT)
         self.MainLayout.addWidget(self.text_edit)
-
-        self.setLayout(self.MainLayout)
         self.center()
+
+        
 
     def createButtons(self):
         self.buttonLayout = QVBoxLayout()  # Utwórz układ pionowy dla przycisków
         self.button_size = 150
 
-        self.button = QPushButton("TEST", self)
-        self.button.setFixedSize(self.button_size, self.button_size)
-        self.button.setStyleSheet(self.theme)
-        # self.button.clicked.connect()
-        self.buttonLayout.addWidget(self.button)
+        # self.button = QPushButton("Main Menu", self)
+        # self.button.setFixedSize(self.button_size, self.button_size)
+        # self.button.setStyleSheet(self.theme)
+        # # self.button.clicked.connect()
+        # self.buttonLayout.addWidget(self.button)
 
         self.new_game_butt = QPushButton("Nowa gra", self)
         self.new_game_butt.setFixedSize(self.button_size, self.button_size)
         self.new_game_butt.setStyleSheet(self.theme)
-        # self.new_game_butt.clicked.connect()
+        self.new_game_butt.clicked.connect(self.confirmNewGame)
         self.buttonLayout.addWidget(self.new_game_butt)
 
         self.MainLayout.addLayout(self.buttonLayout)  # Dodaj układ pionowy do głównego układu poziomego
+
+    
+
+    def confirmNewGame(self):
+        reply = self.createStyledMessageBox('Potwierdzenie', 'Czy na pewno chcesz rozpocząć nową grę?', 
+                                            QMessageBox.Yes | QMessageBox.No)
+        
+        if reply == QMessageBox.Yes:
+            self.startNewGame()
+
+    def startNewGame(self):
+        self.MainLayout.removeWidget(self.chessboard)
+        self.chessboard.deleteLater()
+        self.chessboard = ChessGraphicsQT(self, self.playerOne, self.playerTwo)
+        self.MainLayout.insertWidget(1, self.chessboard)
+
+
+
+    def createStyledMessageBox(self, title, text, buttons):
+        msgBox = QMessageBox(self)
+        msgBox.setWindowTitle(title)
+        msgBox.setText(text)
+        msgBox.setStandardButtons(buttons)
+        msgBox.setStyleSheet(self.theme)
+        return msgBox.exec_()
+        
 
     def append_text(self, text):
         self.text_edit.append(text)
@@ -125,6 +150,7 @@ class ChessGraphicsQT(QWidget):
             if AIMove is None:
                 AIMove = SmartMoveFinder.findRandomMove(self.validMoves)
             self.gs.makeMove(AIMove,AIPlaying=True)
+            
             self.moveMade = True 
             self.AIThinking = False
             self.humanTurn =  self.playerOne if self.gs.WhiteToMove else self.playerTwo
@@ -133,7 +159,7 @@ class ChessGraphicsQT(QWidget):
         pieces = ["bR", "bN", "bB", "bQ", "bK", "bp", "wR", "wN", "wB", "wQ", "wK", "wp"]
         for piece in pieces:
             # Figury od razu w skali planszy
-            pixmap = QPixmap("Figury_HD/" + piece + ".png")
+            pixmap = QPixmap("Figury/" + piece + ".png")
             pixmap = pixmap.scaled(SQ_SIZE, SQ_SIZE)
             ChessStartBoard = QLabel()
             ChessStartBoard.setPixmap(pixmap)
@@ -437,6 +463,9 @@ class OnlineScreen(QWidget):
         super().__init__()
         darkMode(self)
 
+class SettingsScreen(QWidget):
+    def __init__(self, Startscreen) -> None:
+        super().__init__()
 
 
 
@@ -452,5 +481,9 @@ if __name__ == '__main__':
     window = StartScreen()
     window.setGeometry(750, 250, 340, 300)
     window.show()
+
+    '''
+    pyinstaller --onefile --windowed --add-data "Figury;Figury" --onefile --add-data "Figury;Figury" --add-data "Images;Images" ChessQT.py
+    '''
 
     sys.exit(app.exec_())

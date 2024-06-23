@@ -60,7 +60,7 @@ piecePositionScores = {"N": knightScores, "B": bishopScores, "Q": queenScores, "
 
 CHECKMATE = 1000
 STALEMATE = 0
-DEPTH = 1
+DEPTH = 4
 '''
 A positive score is good for white, a negative score is good for black
 '''

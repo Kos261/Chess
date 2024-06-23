@@ -2,6 +2,8 @@
 
 class GameState():
     def __init__(self, GUI):
+
+        self.GUI = GUI
         # Pierwsza litera kolor, druga rodzaj R-rook, N-knight, B-bishop, Q-queen, K-king "--" puste
         self.board = [
             ["bR","bN","bB","bQ","bK","bB","bN","bR"],
@@ -17,13 +19,16 @@ class GameState():
         #   ["--","--","--","--","--","--","--","bR"],
         #   ["--","--","--","--","--","--","bK","--"],
         #   ["--","--","--","--","--","--","--","--"],
-        #   ["--","--","--","--","bp","bp","bp","--"],
+        #   ["--","--","--","--","--","--","--","--"],
         #   ["--","--","wB","--","--","--","--","--"],
         #   ["--","--","--","--","wK","--","--","--"],
-        #   ["--","--","--","--","--","--","bR","--"],
+        #   ["--","--","--","--","--","--","--","--"],
         #   ["--","--","--","--","--","--","--","--"]]
+        self.currentCastlingRight = CastleRights(True,True,True,True)
+        # self.currentCastlingRight = CastleRights(False,False,False,False)
+        # self.GUI.append_text("WARNING \nCASTLING OFF!!!!")
 
-        self.GUI = GUI
+        
 
         self.whiteKingLocation = (7,4)
         self.blackKingLocation = (0,4)
@@ -40,9 +45,7 @@ class GameState():
         self.enpassantPossible = ()
         self.enpassantPossibleLog = [self.enpassantPossible]
 
-        self.currentCastlingRight = CastleRights(True,True,True,True)
-        # self.currentCastlingRight = CastleRights(False,False,False,False)
-        # self.GUI.append_text("WARNING \nCASTLING OFF!!!!")
+        
 
         self.castleRightsLog = [CastleRights(self.currentCastlingRight.wKs,self.currentCastlingRight.bKs,
                                              self.currentCastlingRight.wQs,self.currentCastlingRight.bQs)]
@@ -97,6 +100,8 @@ class GameState():
                 self.board[move.endRow][move.endCol-2] = '--'
 
         self.updateCastleRights(move)
+        # self.GUI.append_text(str(move.moveID))
+        self.check3MovesForStalemate()
         self.castleRightsLog.append(CastleRights(self.currentCastlingRight.wKs,self.currentCastlingRight.bKs,
                                              self.currentCastlingRight.wQs,self.currentCastlingRight.bQs))
         
@@ -384,11 +389,13 @@ class GameState():
             self.staleMate = True
 
     def check3MovesForStalemate(self):
-        if len(self.moveLog) >= 6:
-            if self.moveLog[-1] == self.moveLog[-3] and \
-               self.moveLog[-2] == self.moveLog[-4] and \
-               self.moveLog[-3] == self.moveLog[-5]:
+        if len(self.moveLog) >= 8:
+            if self.moveLog[-1] == self.moveLog[-5] and \
+               self.moveLog[-2] == self.moveLog[-6] and \
+               self.moveLog[-3] == self.moveLog[-7] and\
+               self.moveLog[-4] == self.moveLog[-8]:
                 self.staleMate = True
+                # self.GUI.append_text("Powtarzają się ruchy")
                 
 
     def getPawnMoves(self,row,col,moves):
@@ -626,9 +633,6 @@ class GameState():
                             break
                 else:       #Poza planszą
                     break
-
-
-
 
     def squareUnderAttack(self,row,col):
         self.WhiteToMove = not self.WhiteToMove             #Tura przeciwnika

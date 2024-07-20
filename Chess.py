@@ -1,12 +1,12 @@
 import sys
-from PyQt5.QtWidgets import QApplication, QMainWindow, QWidget, QLabel, QVBoxLayout, QHBoxLayout, QPushButton,QFileDialog, QDialog, QMessageBox, QTextEdit,QStyleFactory, QComboBox
+from PyQt5.QtWidgets import QApplication, QMainWindow, QWidget, QLabel, QVBoxLayout, QHBoxLayout, QPushButton,QFileDialog, QDialog, QMessageBox, QTextEdit,QStyleFactory, QComboBox, QGridLayout, QSlider
 from PyQt5.QtGui import QPainter, QPixmap, QColor, QIcon, QFont, QPalette
 from PyQt5.QtCore import Qt, QTimer, QSize, QByteArray, QBuffer, QIODevice
 from multiprocessing import Process, Queue
 from threading import Thread
 
 from Themes_and_animations import *
-from ChessEngine_Advanced import GameState, Move
+from ChessEngine import GameState, Move
 import SmartMoveFinder
 import random
 import pygame
@@ -31,6 +31,7 @@ class MainGame(QDialog):
         self.setFixedSize(int(1.7*BOARD_WIDTH), BOARD_HEIGHT+40)
         self.chessboard_colors = None
         self.theme = theme_func(self)
+        self.theme_func = theme_func
         self.createButtons()
         self.text_edit = QTextEdit()
 
@@ -49,17 +50,15 @@ class MainGame(QDialog):
         self.MainLayout.addWidget(self.text_edit)
         self.center()
 
-        
-
     def createButtons(self):
         self.buttonLayout = QVBoxLayout()  # Utwórz układ pionowy dla przycisków
         self.button_size = 150
 
-        # self.button = QPushButton("Main Menu", self)
-        # self.button.setFixedSize(self.button_size, self.button_size)
-        # self.button.setStyleSheet(self.theme)
-        # # self.button.clicked.connect()
-        # self.buttonLayout.addWidget(self.button)
+        self.button = QPushButton("Main Menu", self)
+        self.button.setFixedSize(self.button_size, self.button_size)
+        self.button.setStyleSheet(self.theme)
+        self.button.clicked.connect(self.confirmMainMenu)
+        self.buttonLayout.addWidget(self.button)
 
         self.new_game_butt = QPushButton("Nowa gra", self)
         self.new_game_butt.setFixedSize(self.button_size, self.button_size)
@@ -69,10 +68,8 @@ class MainGame(QDialog):
 
         self.MainLayout.addLayout(self.buttonLayout)  # Dodaj układ pionowy do głównego układu poziomego
 
-    
-
     def confirmNewGame(self):
-        reply = self.createStyledMessageBox('Potwierdzenie', 'Czy na pewno chcesz rozpocząć nową grę?', 
+        reply = self.createStyledMessageBox('New game', 'Are you sure you want to start a new game?', 
                                             QMessageBox.Yes | QMessageBox.No)
         
         if reply == QMessageBox.Yes:
@@ -84,7 +81,20 @@ class MainGame(QDialog):
         self.chessboard = ChessGraphicsQT(self, self.playerOne, self.playerTwo)
         self.MainLayout.insertWidget(1, self.chessboard)
 
+    def confirmMainMenu(self):
+        reply = self.createStyledMessageBox('Menu', 'Are you sure you want to exit?', 
+                                            QMessageBox.Yes | QMessageBox.No)
+        
+        if reply == QMessageBox.Yes:
+            self.mainMenu()
 
+    def mainMenu(self):
+        self.main_menu_window = StartScreen(self.theme_func)
+        self.main_menu_window.setGeometry(750, 250, 340, 300)
+        self.main_menu_window.show()
+        self.close()
+
+        
 
     def createStyledMessageBox(self, title, text, buttons):
         msgBox = QMessageBox(self)
@@ -94,7 +104,6 @@ class MainGame(QDialog):
         msgBox.setStyleSheet(self.theme)
         return msgBox.exec_()
         
-
     def append_text(self, text):
         self.text_edit.append(text)
 
@@ -111,7 +120,7 @@ class ChessGraphicsQT(QWidget):
         self.chessboard_color = GUI.chessboard_color
         self.loadImages()
         self.GUI = GUI
-        self.gs = GameState(GUI)
+        self.gs = GameState(self.GUI)
         self.validMoves = self.gs.getValidMoves()
         random.shuffle(self.validMoves)
 
@@ -351,16 +360,18 @@ class ChessGraphicsQT(QWidget):
             pass
 
 class StartScreen(QWidget):
-    def __init__(self):
+    def __init__(self, theme_func = darkMode):
         super().__init__()
         self.playerOne = None
         self.playerTwo = None
         self.setFixedSize(550, 750)
         
         self.Layout = QVBoxLayout(self)
-        self.theme_func = darkMode
-        self.theme = darkMode(self)
+        self.theme_func = theme_func
+        self.theme = theme_func(self)
+        
         self.createButtons()
+        self.changeTheme(theme_func)
         
     def createButtons(self):
         self.ChessStartBoard =  StartScreenBoard()
@@ -379,7 +390,7 @@ class StartScreen(QWidget):
         self.settings = QPushButton()
         self.settings.setFixedSize(32, 32)
         self.settings.setIcon(QIcon("Images/Gear.png"))
-        # self.settings.clicked.connect(self.clickedSettings)
+        self.settings.clicked.connect(self.clickedSettings)
 
         self.button0 = QPushButton("New gamemode soon...")
         self.button0.setFont(font2)
@@ -449,6 +460,11 @@ class StartScreen(QWidget):
         self.playerTwo = False
         self.startGame()
 
+    def clickedSettings(self):
+        self.Settings = SettingsScreen(self, self.theme_func)
+        # self.Settings.setGeometry(750, 250, 340, 300)
+        self.Settings.show()
+
     def startGame(self):
         if (self.playerOne != None) and (self.playerTwo != None):
             self.close()
@@ -464,12 +480,37 @@ class OnlineScreen(QWidget):
         darkMode(self)
 
 class SettingsScreen(QWidget):
-    def __init__(self, Startscreen) -> None:
+    def __init__(self, Startscreen, theme_func) -> None:
         super().__init__()
+        self.Layout = QGridLayout(self)
+        
+        font2 = QFont("Arial", 12)
+        self.theme_combo = QComboBox()
+        self.theme_combo.addItem("Light Mode")
+        self.theme_combo.addItem("Dark Mode")
+        self.theme_combo.addItem("Green Neon")
+        self.theme_combo.addItem("BridgerTone")
+        self.theme_combo.currentIndexChanged.connect(Startscreen.changeTheme)
+        
+        self.difficulty = 1
+        self.label2 = QLabel(f"Difficulty level: {self.difficulty}")
+        self.slider = QSlider(Qt.Horizontal)
+        self.slider.setTickInterval(5)
+        self.slider.setMinimum(1)
+        self.slider.setMaximum(5)
+        self.slider.setTickPosition(QSlider.TicksBelow)
+        self.slider.setTickInterval(1)
+        self.slider.setSingleStep(1)
+        self.slider.setStyleSheet(slider_stylesheet)
+        self.slider.valueChanged.connect(self.value_changed)
 
-
-
-
+        self.Layout.addWidget(self.theme_combo, 0, 0)
+        self.Layout.addWidget(self.label2,1,0)
+        self.Layout.addWidget(self.slider, 2,0)
+        
+    def value_changed(self):
+        self.difficulty = self.slider.value()
+        self.label2.setText(f"Difficulty level: {self.difficulty}")
 
 
 

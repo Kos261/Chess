@@ -27,7 +27,6 @@ class ChessPiece:
         self.speed = random.randrange(1,10)
         self.angle = 0
 
-
 class StartScreenBoard(QWidget):
     def __init__(self):
         super().__init__()
@@ -373,7 +372,51 @@ def bridgerToneMode(window):
     window.chessboard_color = palettes["BridgerTone"]
     return styleSheet
 
+slider_stylesheet = '''QSlider::groove:horizontal {
+        border: 1px solid #bbb;
+        background: #ddd;
+        height: 8px;
+    }
 
+    QSlider::sub-page:horizontal {
+        background: #66b2ff;
+        border: 1px solid #66b2ff;
+        height: 8px;
+    }
+
+    QSlider::add-page:horizontal {
+        background: #e0e0e0;
+        border: 1px solid #777;
+        height: 8px;
+    }
+
+    QSlider::handle:horizontal {
+        background: #ffffff;
+        border: 2px solid #66b2ff;
+        width: 16px;
+        height: 16px;
+        margin: -4px 0; 
+    }
+
+    QSlider::handle:horizontal:hover {
+        background: #66b2ff;
+        border: 2px solid #66b2ff;
+    }
+
+    QSlider::sub-page:horizontal:disabled {
+        background: #bbb;
+        border-color: #999;
+    }
+
+    QSlider::add-page:horizontal:disabled {
+        background: #eee;
+        border-color: #999;
+    }
+
+    QSlider::handle:horizontal:disabled {
+        background: #eee;
+        border: 2px solid #aaa;
+    }'''
 
 if __name__ == '__main__':
     app = QApplication(sys.argv)

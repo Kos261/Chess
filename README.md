@@ -6,4 +6,5 @@ There are some funky options like theme. Currently I'm working:
 2. some fun details like clock for 2 player mode
 3. difficulty options for bots.
 
-![Chessboard](Images\Chess_screen.png)
+![ChessMenu](Images/Chess_screen.png)
+![Chessboard]("Images/Checkboard.png")

@@ -6,9 +6,7 @@ There are some funky options like theme. Currently I'm working:
 2. some fun details like clock for 2 player mode
 3. difficulty options for bots.
 
-<table>
-  <tr>
-    <td><img src="Images/Chess_screen.png" alt="ChessMenu" width="300"></td>
-    <td><img src="Images/Checkboard.png" alt="Chessboard" width="300"></td>
-  </tr>
-</table>
+<div style="display: flex; align-items: flex-start; gap: 10px;">
+  <img src="Images/Chess_screen.png" alt="ChessMenu" style="max-width: 45%; height: auto;">
+  <img src="Images/Checkboard.png" alt="Chessboard" style="max-width: 45%; height: auto;">
+</div>

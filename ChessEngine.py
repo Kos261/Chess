@@ -16,14 +16,14 @@ class GameState():
             ["wR","wN","wB","wQ","wK","wB","wN","wR"]]
         
         # self.board = [
-        #   ["--","--","--","--","--","--","--","bR"],
-        #   ["--","--","--","--","--","--","bK","--"],
+        #   ["bR","--","--","--","bK","--","--","bR"],
         #   ["--","--","--","--","--","--","--","--"],
         #   ["--","--","--","--","--","--","--","--"],
-        #   ["--","--","wB","--","--","--","--","--"],
-        #   ["--","--","--","--","wK","--","--","--"],
         #   ["--","--","--","--","--","--","--","--"],
-        #   ["--","--","--","--","--","--","--","--"]]
+        #   ["--","--","--","--","--","--","--","--"],
+        #   ["--","--","--","--","--","--","--","--"],
+        #   ["--","--","--","--","--","--","--","--"],
+        #   ["wR","--","--","--","wK","--","--","wR"]]
         self.currentCastlingRight = CastleRights(True,True,True,True)
         # self.currentCastlingRight = CastleRights(False,False,False,False)
         # self.GUI.append_text("WARNING \nCASTLING OFF!!!!")
@@ -107,39 +107,6 @@ class GameState():
         
         self.enpassantPossibleLog.append(self.enpassantPossible)
 
-    def undoMove(self):
-        if len(self.moveLog) != 0:
-            move = self.moveLog.pop()
-            self.board[move.startRow][move.startCol] = move.pieceMoved
-            self.board[move.endRow][move.endCol] = move.pieceCaptured
-            self.WhiteToMove = not self.WhiteToMove
-            if move.pieceMoved == "wK":
-                self.whiteKingLocation = (move.startRow , move.startCol)
-            elif move.pieceMoved == "bK":
-                self.blackKingLocation = (move.startRow , move.startCol)
-
-            #Undo enpassant
-            if move.isEnPassantMove:
-                self.board[move.endRow][move.endCol] = '--'
-                self.board[move.startRow][move.endCol] = move.pieceCaptured
-            
-            self.enpassantPossibleLog.pop()
-            self.enpassantPossible = self.enpassantPossibleLog[-1]
-
-
-            #Undo castling
-            self.castleRightsLog.pop()
-            self.currentCastlingRight = self.castleRightsLog[-1]
-            if move.isCastleMove:
-                if move.endCol - move.startCol == 2:    #King side castle
-                    self.board[move.endRow][move.endCol+1] = self.board[move.endRow][move.endCol-1]
-                    self.board[move.endRow][move.endCol-1] = '--'
-                else: #Queen side castle
-                    self.board[move.endRow][move.endCol-2] = self.board[move.endRow][move.endCol+1]
-                    self.board[move.endRow][move.endCol+1] = '--'
-
-            self.checkMate = False
-            self.staleMate = False
 
     def updateCastleRights(self,move):
 
@@ -230,6 +197,12 @@ class GameState():
         else:
             self.checkMate = False
             self.staleMate = False
+
+        # castle_moves = [move.moveID for move in moves if move.isCastleMove]
+        # repeated_moves = [move for move in moves if move.moveID in castle_moves]
+        # print(f"Repeated moves: ")
+        # for move in repeated_moves:
+        #     print(move)
         return moves
 
     def checkForPinsAndChecks(self):
@@ -680,7 +653,7 @@ class Move():
         
         #Castling
         self.isCastleMove = isCastleMove
-
+        # print(f"This is castle move {self.isCastleMove}")
         #en passant true/false
         self.isEnPassantMove = isEnPassantMove
         if self.isEnPassantMove:

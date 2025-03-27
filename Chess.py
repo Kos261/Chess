@@ -2,6 +2,7 @@ import sys
 from PyQt5.QtWidgets import QApplication, QMainWindow, QWidget, QLabel, QVBoxLayout, QHBoxLayout, QPushButton,QFileDialog, QDialog, QMessageBox, QTextEdit,QStyleFactory, QComboBox, QGridLayout, QSlider
 from PyQt5.QtGui import QPainter, QPixmap, QColor, QIcon, QFont, QPalette
 from PyQt5.QtCore import Qt, QTimer, QSize, QByteArray, QBuffer, QIODevice
+
 from multiprocessing import Process, Queue
 from threading import Thread
 
@@ -66,6 +67,7 @@ class MainGame(QDialog):
         self.new_game_butt.clicked.connect(self.confirmNewGame)
         self.buttonLayout.addWidget(self.new_game_butt)
 
+
         self.MainLayout.addLayout(self.buttonLayout)  # Dodaj układ pionowy do głównego układu poziomego
 
     def confirmNewGame(self):
@@ -93,8 +95,6 @@ class MainGame(QDialog):
         self.main_menu_window.setGeometry(750, 250, 340, 300)
         self.main_menu_window.show()
         self.close()
-
-        
 
     def createStyledMessageBox(self, title, text, buttons):
         msgBox = QMessageBox(self)
@@ -132,7 +132,6 @@ class ChessGraphicsQT(QWidget):
         self.gameOver = False
         self.AIThinking = False
         self.moveFinderProcess = None
-        self.moveUndone = False
         self.moveMade = False  
         self.humanTurn = self.playerOne if self.gs.WhiteToMove else self.playerTwo
 
@@ -141,7 +140,7 @@ class ChessGraphicsQT(QWidget):
         self.timer.start(int(1000 / MAX_FPS))
 
     def AIMoveLogic(self):
-        if not self.gameOver and not self.humanTurn and not self.moveUndone:
+        if not self.gameOver and not self.humanTurn:
             if not self.AIThinking:
                 self.AIThinking = True
                 self.GUI.append_text("Thinking...")
@@ -194,12 +193,11 @@ class ChessGraphicsQT(QWidget):
         
         if self.moveMade:
             self.moveMade = False
-            self.moveUndone = False 
             self.sqSelected = ()         
             self.playerClicks = []  
             self.validMoves = self.gs.getValidMoves()  
         
-        if not self.gameOver and not self.humanTurn and not self.moveUndone:
+        if not self.gameOver and not self.humanTurn:
             self.AIMoveLogic()
         
         #TUTAJ BLOKADA GDY AI SYMULUJE RUCHY Ale średnio działa
@@ -296,20 +294,6 @@ class ChessGraphicsQT(QWidget):
         self.painter.drawText(x-text_width//2+6, y-text_height//2+6 , text)
 
     def keyPressEvent(self, event):
-        if event.key() == Qt.Key_Z:
-            self.gs.undoMove()   #Undo move
-            self.sqSelected = ()
-            self.playerClicks = []
-            self.gameOver = False
-            self.moveMade = True
-            
-            if self.AIThinking:
-                self.moveFinderProcess.terminate()
-            self.AIThinking = False
-
-            self.moveUndone = True
-            self.validMoves = self.gs.getValidMoves()
-
         if event.key() == Qt.Key_R:  #Reset game
             self.gs = GameState(self)
             self.validMoves = self.gs.getValidMoves()
@@ -321,8 +305,6 @@ class ChessGraphicsQT(QWidget):
             if self.AIThinking:
                 self.moveFinderProcess.terminate()
                 self.AIThinking = False
-
-            self.moveUndone = True
         
     def mousePressEvent(self, event):
         if event.button() == Qt.LeftButton: 

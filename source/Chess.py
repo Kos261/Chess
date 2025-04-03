@@ -11,7 +11,7 @@ from ChessEngine import GameState, Move
 import SmartMoveFinder
 import random
 import pygame
-
+import os
 
 BOARD_WIDTH = BOARD_HEIGHT = 600
 MOVE_LOG_PANEL_WIDTH = 200
@@ -75,6 +75,7 @@ class MainGame(QDialog):
                                             QMessageBox.Yes | QMessageBox.No)
         
         if reply == QMessageBox.Yes:
+            self.text_edit.clear()
             self.startNewGame()
 
     def startNewGame(self):
@@ -165,10 +166,13 @@ class ChessGraphicsQT(QWidget):
 
     def loadImages(self):
         pieces = ["bR", "bN", "bB", "bQ", "bK", "bp", "wR", "wN", "wB", "wQ", "wK", "wp"]
+        image_path = os.path.join(os.path.dirname(__file__), '..', 'Figury')
         for piece in pieces:
-            # Figury od razu w skali planszy
-            pixmap = QPixmap("Figury/" + piece + ".png")
+            pixmap = QPixmap(image_path + "/" + piece + ".png")
             pixmap = pixmap.scaled(SQ_SIZE, SQ_SIZE)
+            if pixmap.isNull():
+                raise Exception(f"Figure {piece} is not loaded properly")
+
             ChessStartBoard = QLabel()
             ChessStartBoard.setPixmap(pixmap)
             IMAGES[piece] = ChessStartBoard
@@ -361,17 +365,17 @@ class StartScreen(QWidget):
         font = QFont("Arial", 25)
         font2 = QFont("Arial", 12)
 
-        self.theme_combo = QComboBox()
-        self.theme_combo.addItem("Light Mode")
-        self.theme_combo.addItem("Dark Mode")
-        self.theme_combo.addItem("Green Neon")
-        self.theme_combo.addItem("BridgerTone")
-        self.theme_combo.currentIndexChanged.connect(self.changeTheme)
+        # self.theme_combo = QComboBox()
+        # self.theme_combo.addItem("Light Mode")
+        # self.theme_combo.addItem("Dark Mode")
+        # self.theme_combo.addItem("Green Neon")
+        # self.theme_combo.addItem("BridgerTone")
+        # self.theme_combo.currentIndexChanged.connect(self.changeTheme)
 
-
+        image_path = os.path.join(os.path.dirname(__file__), '..', 'Assets')
         self.settings = QPushButton()
         self.settings.setFixedSize(32, 32)
-        self.settings.setIcon(QIcon("Images/Gear.png"))
+        self.settings.setIcon(QIcon(image_path + "/Gear.png"))
         self.settings.clicked.connect(self.clickedSettings)
 
         self.button0 = QPushButton("New gamemode soon...")
@@ -394,7 +398,7 @@ class StartScreen(QWidget):
         self.button3.setStyleSheet(self.theme)
         self.button3.clicked.connect(self.clickedAiVAi)
 
-        self.Layout.addWidget(self.theme_combo)
+        # self.Layout.addWidget(self.theme_combo)
         self.Layout.addWidget(self.settings)
         self.Layout.addWidget(self.ChessStartBoard)
         self.Layout.addWidget(self.button0)

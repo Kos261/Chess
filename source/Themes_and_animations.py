@@ -1,9 +1,11 @@
 from PyQt5.QtWidgets import QApplication, QMainWindow, QWidget, QLabel, QVBoxLayout, QHBoxLayout, QPushButton,QFileDialog, QDialog, QMessageBox, QTextEdit,QStyleFactory
 from PyQt5.QtGui import QPainter, QPixmap, QColor, QIcon, QFont, QPalette, QTransform
 from PyQt5.QtCore import Qt, QTimer, QSize, QByteArray, QBuffer, QIODevice, QRect
+
 import sys
 import random
 import time
+import os
 
 SQ_SIZE = 50
 DIM_ROW = 6
@@ -60,9 +62,9 @@ class StartScreenBoard(QWidget):
 
     def loadImages(self):
         pieces = ["bR", "bN", "bB", "bQ", "bK", "bp", "wR", "wN", "wB", "wQ", "wK", "wp"]
+        image_path = os.path.join(os.path.dirname(__file__), '..', 'Figury')
         for piece in pieces:
-            # Ładujemy figury i skalujemy je do rozmiaru pola
-            pixmap = QPixmap("Figury/" + piece + ".png")
+            pixmap = QPixmap(image_path + "/" + piece + ".png")
             pixmap = pixmap.scaled(SQ_SIZE, SQ_SIZE, Qt.KeepAspectRatio)
             IMAGES[piece] = pixmap
 

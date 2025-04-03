@@ -4,11 +4,7 @@ __pycache__/
 *$py.class
 
 # Ignore virtual environments
-env/
-venv/
-ENV/
-.venv/
-.ENV/
+ChessVenv/
 
 # Ignore other common Python-related files
 *.egg-info/

@@ -5,28 +5,29 @@ class GameState():
 
         self.GUI = GUI
         # Pierwsza litera kolor, druga rodzaj R-rook, N-knight, B-bishop, Q-queen, K-king "--" puste
-        self.board = [
-            ["bR","bN","bB","bQ","bK","bB","bN","bR"],
-            ["bp","bp","bp","bp","bp","bp","bp","bp"],
-            ["--","--","--","--","--","--","--","--"],
-            ["--","--","--","--","--","--","--","--"],
-            ["--","--","--","--","--","--","--","--"],
-            ["--","--","--","--","--","--","--","--"],
-            ["wp","wp","wp","wp","wp","wp","wp","wp"],
-            ["wR","wN","wB","wQ","wK","wB","wN","wR"]]
-        
         # self.board = [
-        #   ["bR","--","--","--","bK","--","--","bR"],
-        #   ["--","--","--","--","--","--","--","--"],
-        #   ["--","--","--","--","--","--","--","--"],
-        #   ["--","--","--","--","--","--","--","--"],
-        #   ["--","--","--","--","--","--","--","--"],
-        #   ["--","--","--","--","--","--","--","--"],
-        #   ["--","--","--","--","--","--","--","--"],
-        #   ["wR","--","--","--","wK","--","--","wR"]]
-        self.currentCastlingRight = CastleRights(True,True,True,True)
-        # self.currentCastlingRight = CastleRights(False,False,False,False)
-        # self.GUI.append_text("WARNING \nCASTLING OFF!!!!")
+        #     ["bR","bN","bB","bQ","bK","bB","bN","bR"],
+        #     ["bp","bp","bp","bp","bp","bp","bp","bp"],
+        #     ["--","--","--","--","--","--","--","--"],
+        #     ["--","--","--","--","--","--","--","--"],
+        #     ["--","--","--","--","--","--","--","--"],
+        #     ["--","--","--","--","--","--","--","--"],
+        #     ["wp","wp","wp","wp","wp","wp","wp","wp"],
+        #     ["wR","wN","wB","wQ","wK","wB","wN","wR"]]
+        
+        self.board = [
+          ["--","--","--","--","bK","--","--","--"],
+          ["--","--","--","--","--","--","wp","--"],
+          ["--","--","--","--","--","--","--","--"],
+          ["--","--","--","--","--","--","--","--"],
+          ["--","--","--","--","--","--","--","--"],
+          ["--","--","--","--","--","--","--","--"],
+          ["--","--","--","--","--","--","--","--"],
+          ["--","--","--","--","wK","--","--","--"]]
+        # self.currentCastlingRight = CastleRights(True,True,True,True)
+        self.currentCastlingRight = CastleRights(False,False,False,False)
+        self.GUI.append_text("WARNING \n--DEBUG MODE--")
+        self.GUI.append_text("WARNING \nCASTLING OFF!!!!")
 
         
 
@@ -63,6 +64,8 @@ class GameState():
                 self.whiteKingLocation = (move.endRow, move.endCol)
 
         if move.pawnPromotion:
+            self.GUI.chessboard.pawnPromotionActive = True
+            self.GUI.append_text(str(self.GUI.chessboard.pawnPromotionActive))
 
             if not AIPlaying:
                 while True:
@@ -71,7 +74,7 @@ class GameState():
                         if promotedPiece in ['Q','R','B','N']:
                             break
                         else:
-                            print("Error! give proper letter for figure")
+                            self.GUI.append_text("Error! give proper letter for figure")
                     except ValueError:
                         print("Wprowadzono zły znak")
                 self.board[move.endRow][move.endCol] = move.pieceMoved[0] + promotedPiece
@@ -330,8 +333,6 @@ class GameState():
                     inCheck = True
                     checks.append((endRow,endCol,move[0],move[1]))
 
-        # for item in checks:
-        #     self.GUI.append_text(str(item))
         return inCheck, pins, checks
 
     def getAllPossibleMoves(self, checkingCastling = False): 
@@ -368,7 +369,6 @@ class GameState():
                self.moveLog[-3] == self.moveLog[-7] and\
                self.moveLog[-4] == self.moveLog[-8]:
                 self.staleMate = True
-                # self.GUI.append_text("Powtarzają się ruchy")
                 
 
     def getPawnMoves(self,row,col,moves):
@@ -400,6 +400,7 @@ class GameState():
             if not piecePinned or pinDirection == (moveAmount,0):
                 if row+moveAmount == backRow:
                     pawnPromotion = True
+                    # self.GUI.append_text(f"PAWN PROMOTION: " + str(pawnPromotion))
                 moves.append(Move((row,col),(row+moveAmount,col),self.board, pawnPromotion = pawnPromotion))
                 if row == startRow and self.board[row+2*moveAmount][col] == '--':
                     moves.append(Move((row,col),(row+2*moveAmount,col),self.board))
@@ -411,6 +412,7 @@ class GameState():
                 if self.board[row+moveAmount][col-1][0] == enemyColor:
                     if row+moveAmount == backRow:
                         pawnPromotion = True
+                        # self.GUI.append_text(f"PAWN PROMOTION: " + str(pawnPromotion))
                     moves.append(Move((row,col),(row+moveAmount,col-1), self.board, pawnPromotion = pawnPromotion))
                 if (row+moveAmount, col-1) == self.enpassantPossible:
                     #This block handles issues when after enpassante there is free way to kill king
@@ -445,6 +447,8 @@ class GameState():
                 if self.board[row+moveAmount][col+1][0] == enemyColor:
                     if row+moveAmount == backRow:
                         pawnPromotion = True
+                        # self.GUI.append_text(f"PAWN PROMOTION: " + str(pawnPromotion))
+
                     moves.append(Move((row,col),(row+moveAmount,col+1), self.board, pawnPromotion = pawnPromotion))
                 if (row+moveAmount, col-1) == self.enpassantPossible:
                     #This block handles issues when after enpassante there is free way to kill king
@@ -525,7 +529,6 @@ class GameState():
     def getBishopMoves(self,row,col,moves):
         piecePinned = False
         pinDirection = ()
-        # self.GUI.append_text(str(self.pins))
         for i in range(len(self.pins)-1,-1,-1):
             if self.pins[i][0] == row and self.pins[i][1] == col:
                 piecePinned = True

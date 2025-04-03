@@ -37,7 +37,7 @@ class MainGame(QDialog):
         self.text_edit = QTextEdit()
 
         # Dodaj niestandardowy widget do układu
-        self.chessboard = ChessGraphicsQT(self, self.playerOne, self.playerTwo)
+        self.chessboard = Chessboard(self, self.playerOne, self.playerTwo)
         self.chessboard.setFixedSize(BOARD_WIDTH, BOARD_HEIGHT)
         self.MainLayout.addWidget(self.chessboard)
         self.chessboard.setFocus()
@@ -81,7 +81,7 @@ class MainGame(QDialog):
     def startNewGame(self):
         self.MainLayout.removeWidget(self.chessboard)
         self.chessboard.deleteLater()
-        self.chessboard = ChessGraphicsQT(self, self.playerOne, self.playerTwo)
+        self.chessboard = Chessboard(self, self.playerOne, self.playerTwo)
         self.MainLayout.insertWidget(1, self.chessboard)
 
     def confirmMainMenu(self):
@@ -115,7 +115,7 @@ class MainGame(QDialog):
         y = (screen_geometry.height() - self.height()) // 2
         self.move(x, y)
 
-class ChessGraphicsQT(QWidget):
+class Chessboard(QWidget):
     def __init__(self, GUI, playerOne, playerTwo):
         super().__init__()
         self.chessboard_color = GUI.chessboard_color
@@ -128,6 +128,7 @@ class ChessGraphicsQT(QWidget):
         self.playerOne = playerOne
         self.playerTwo = playerTwo   
 
+        self.pawnPromotionActive = False
         self.sqSelected = () 
         self.playerClicks = [] 
         self.gameOver = False
@@ -178,7 +179,6 @@ class ChessGraphicsQT(QWidget):
             IMAGES[piece] = ChessStartBoard
 
     def drawBoard(self):
-        
         for row in range(DIMENSION):
             for col in range(DIMENSION):
                 color = self.chessboard_color[((row + col) % 2)]
@@ -194,13 +194,23 @@ class ChessGraphicsQT(QWidget):
                     self.painter.drawPixmap(col*SQ_SIZE, row*SQ_SIZE, SQ_SIZE, SQ_SIZE, pixmap)
 
     def updateGameState(self):
+        # print("Pawn promotion is now: " + str(self.pawnPromotionActive))
+        # print("Engine thinks its: " + str))
         
+
         if self.moveMade:
+            # last_move = self.gs.moveLog[-1]
+            # if last_move:
+            #     if last_move.pawnPromotion:
+            #         self.pawnPromotionActive = True
+
             self.moveMade = False
             self.sqSelected = ()         
             self.playerClicks = []  
             self.validMoves = self.gs.getValidMoves()  
         
+        
+
         if not self.gameOver and not self.humanTurn:
             self.AIMoveLogic()
         
@@ -220,6 +230,42 @@ class ChessGraphicsQT(QWidget):
             self.update()
             self.timer.stop()
 
+    def pawn_promotion_screen(self):
+        size_scaled = int(SQ_SIZE * 1.2)
+        self.pawn_promotionPieces = ['wQ', 'wR', 'wB', 'wN']
+
+        board_width = 8 * SQ_SIZE
+        total_width = 4 * size_scaled
+        x_offset = (board_width - total_width) // 2
+        y = 30
+
+        base_color = self.chessboard_color[1]
+        shadow_color = QColor(
+            max(0, base_color.red() - 40),
+            max(0, base_color.green() - 40),
+            max(0, base_color.blue() - 40)
+        )
+        shadow_color.setAlpha(150)
+
+        self.painter.fillRect(x_offset + 10, y + 10,
+                            size_scaled * 4 + 20,
+                            size_scaled + 20,
+                            shadow_color)
+
+        self.painter.fillRect(x_offset - 10, y - 10,
+                            size_scaled * 4 + 20,
+                            size_scaled + 20,
+                            self.chessboard_color[1])
+
+        for col in range(4):
+            color = self.chessboard_color[(col % 2)]
+            x = x_offset + col * size_scaled
+            self.painter.fillRect(x, y, size_scaled, size_scaled, color)
+            pixmap = IMAGES[self.pawn_promotionPieces[col]].pixmap()
+
+            scaled_pixmap = pixmap.scaled(size_scaled, size_scaled, Qt.KeepAspectRatio, Qt.SmoothTransformation)
+            self.painter.drawPixmap(x, y, size_scaled, size_scaled, scaled_pixmap)
+
     def paintEvent(self,event):
         self.painter = QPainter(self)
         self.painter.setRenderHint(QPainter.Antialiasing)
@@ -227,7 +273,8 @@ class ChessGraphicsQT(QWidget):
         if not self.gameOver: 
             self.drawBoard()
             self.highlightSquares()
-
+            if self.pawnPromotionActive:
+                self.pawn_promotion_screen()
         else:
             self.drawBoard()
             self.drawEndText(self.Wintext)
@@ -313,34 +360,51 @@ class ChessGraphicsQT(QWidget):
     def mousePressEvent(self, event):
         if event.button() == Qt.LeftButton: 
             if not self.gameOver:
-                col = event.pos().x() // SQ_SIZE
-                row = event.pos().y() // SQ_SIZE
+                if self.pawnPromotionActive:
+                    x = event.pos().x()
+                    y = event.pos().y()
 
-                if self.sqSelected == (row, col) or col >= 8:
-                    self.sqSelected = ()  
-                    self.playerClicks = []
+                    size_scaled = int(SQ_SIZE * 1.2)
+                    promo_width = 4 * size_scaled
+                    x_offset = (BOARD_WIDTH - promo_width) // 2
+                    panel_y = 30
+
+                    if x_offset <= x < x_offset + promo_width and \
+                    panel_y <= y < panel_y + size_scaled:
+                        selected_col = int((x - x_offset) // size_scaled)
+                        selected_piece = self.pawn_promotionPieces[selected_col]    
+                        print("Wybrano figurę do promocji:", selected_piece)
+
+
+
                 else:
-                    self.sqSelected = (row, col)
-                    self.playerClicks.append(self.sqSelected)
-                                        
-                                        #TU ZMIENIŁEM == self.humanTurn
-                if len(self.playerClicks) == 2:
-                    self.move = Move(self.playerClicks[0], self.playerClicks[1], self.gs.board)
-    
-                    if self.move in self.validMoves:
-                        self.gs.makeMove(self.move)
-                        self.humanTurn =  self.playerOne if self.gs.WhiteToMove else self.playerTwo
-                        # self.GUI.append_text(f"Teraz gra człowiek - {self.humanTurn}")
-                        self.GUI.append_text(str(self.gs.moveLog[-1]))
-                        self.moveMade = True
-                    
-                        self.sqSelected = ()
-                        self.playerClicks = []
-                        self.validMoves = self.gs.getValidMoves()
-                    else:
-                        self.sqSelected = ()
-                        self.playerClicks = []
+                    col = event.pos().x() // SQ_SIZE
+                    row = event.pos().y() // SQ_SIZE
 
+                    if self.sqSelected == (row, col) or col >= 8:
+                        self.sqSelected = ()  
+                        self.playerClicks = []
+                    else:
+                        self.sqSelected = (row, col)
+                        self.playerClicks.append(self.sqSelected)
+                                            
+                                            #TU ZMIENIŁEM == self.humanTurn
+                    if len(self.playerClicks) == 2:
+                        self.move = Move(self.playerClicks[0], self.playerClicks[1], self.gs.board)
+        
+                        if self.move in self.validMoves:
+                            self.gs.makeMove(self.move)
+                            self.humanTurn =  self.playerOne if self.gs.WhiteToMove else self.playerTwo
+                            # self.GUI.append_text(f"Teraz gra człowiek - {self.humanTurn}")
+                            self.GUI.append_text(str(self.gs.moveLog[-1]))
+                            self.moveMade = True
+                        
+                            self.sqSelected = ()
+                            self.playerClicks = []
+                            self.validMoves = self.gs.getValidMoves()
+                        else:
+                            self.sqSelected = ()
+                            self.playerClicks = []
 
         elif event.button() == Qt.RightButton:
             pass

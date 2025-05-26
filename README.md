@@ -17,7 +17,7 @@ Yes, that's it. The chess game that has built-in bot capabilities, allowing you 
   <!-- Narrow Preview Image -->
   <div style="flex: 1;">
     <img 
-      src="Images/Chess_screen.png" 
+      src="Assets/Chess_screen.png" 
       alt="Chess Menu Preview" 
       style="width: 100%; max-width: 250px; height: auto; border-radius: 10px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);"
     >
@@ -29,7 +29,7 @@ Yes, that's it. The chess game that has built-in bot capabilities, allowing you 
 <!-- Large Full-Width Image -->
 <div style="width: 100%; margin-top: 20px;">
   <img 
-    src="Images/Checkboard.png" 
+    src="Assets/Checkboard.png" 
     alt="Detailed Chessboard View" 
     style="width: 100%; max-height: 600px; object-fit: cover; border-radius: 15px; box-shadow: 0 6px 12px rgba(0,0,0,0.15);"
   >

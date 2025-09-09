@@ -6,20 +6,6 @@ __pycache__/
 # Ignore virtual environments
 ChessVenv/
 
-# Ignore other common Python-related files
-*.egg-info/
-*.egg
-*.pyo
-*.pyd
-
-# Ignore test and log files
-.coverage
-.tox/
-nosetests.xml
-coverage.xml
-*.cover
-*.log
-
 # Ignore distribution and packaging files
 build/
 dist/
@@ -29,22 +15,5 @@ dist/
 *.egg
 MANIFEST
 
-# Ignore Jupyter Notebook checkpoints
-.ipynb_checkpoints
-
-# Ignore IDE/editor directories and files
 .vscode/
 .idea/
-*.sublime-project
-*.sublime-workspace
-
-# Ignore MacOS files
-.DS_Store
-
-# Ignore Windows files
-Thumbs.db
-desktop.ini
-
-# Ignore any other system files
-*.swp
-*~

@@ -1,10 +1,10 @@
 import sys
 from PyQt5.QtWidgets import QApplication, QMainWindow, QWidget, QLabel, QVBoxLayout, QHBoxLayout, QPushButton,QFileDialog, QDialog, QMessageBox, QTextEdit,QStyleFactory, QComboBox, QGridLayout, QSlider
 from PyQt5.QtGui import QPainter, QPixmap, QColor, QIcon, QFont, QPalette
-from PyQt5.QtCore import Qt, QTimer, QSize, QByteArray, QBuffer, QIODevice
+from PyQt5.QtCore import Qt, QTimer# QSize, QByteArray, QBuffer, QIODevice
 
-from multiprocessing import Process, Queue
-from threading import Thread
+# from multiprocessing import Process, Queue
+# from threading import Thread
 
 from Themes_and_animations import *
 from ChessEngine import GameState, Move
@@ -128,7 +128,7 @@ class Chessboard(QWidget):
         self.playerOne = playerOne
         self.playerTwo = playerTwo   
 
-        self.pawnPromotionActive = False
+        self.pawnPromotionActive = True
         self.sqSelected = () 
         self.playerClicks = [] 
         self.gameOver = False
@@ -194,10 +194,6 @@ class Chessboard(QWidget):
                     self.painter.drawPixmap(col*SQ_SIZE, row*SQ_SIZE, SQ_SIZE, SQ_SIZE, pixmap)
 
     def updateGameState(self):
-        # print("Pawn promotion is now: " + str(self.pawnPromotionActive))
-        # print("Engine thinks its: " + str))
-        
-
         if self.moveMade:
             # last_move = self.gs.moveLog[-1]
             # if last_move:
@@ -388,14 +384,14 @@ class Chessboard(QWidget):
                         self.sqSelected = (row, col)
                         self.playerClicks.append(self.sqSelected)
                                             
-                                            #TU ZMIENIŁEM == self.humanTurn
                     if len(self.playerClicks) == 2:
+            
                         self.move = Move(self.playerClicks[0], self.playerClicks[1], self.gs.board)
-        
+                        #There is no check if move is pawn promotion!!!!
                         if self.move in self.validMoves:
+
                             self.gs.makeMove(self.move)
                             self.humanTurn =  self.playerOne if self.gs.WhiteToMove else self.playerTwo
-                            # self.GUI.append_text(f"Teraz gra człowiek - {self.humanTurn}")
                             self.GUI.append_text(str(self.gs.moveLog[-1]))
                             self.moveMade = True
                         
@@ -512,7 +508,7 @@ class StartScreen(QWidget):
 
     def clickedSettings(self):
         self.Settings = SettingsScreen(self, self.theme_func)
-        # self.Settings.setGeometry(750, 250, 340, 300)
+        self.Settings.setGeometry(750, 250, 340, 300)
         self.Settings.show()
 
     def startGame(self):
@@ -574,6 +570,7 @@ if __name__ == '__main__':
     window.show()
 
     '''
+    If you want .exe file
     pyinstaller --onefile --windowed --add-data "Figury;Figury" --onefile --add-data "Figury;Figury" --add-data "Images;Images" ChessQT.py
     '''
 

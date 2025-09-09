@@ -370,7 +370,6 @@ class GameState():
                self.moveLog[-4] == self.moveLog[-8]:
                 self.staleMate = True
                 
-
     def getPawnMoves(self,row,col,moves):
         piecePinned = False
         pinDirection = ()

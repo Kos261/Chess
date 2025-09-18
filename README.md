@@ -35,6 +35,18 @@ Yes, that's it. The chess game that has built-in bot capabilities, allowing you 
   >
 </div>
 
+
+
+### Creating .exe file
+```powershell
+uv pyinstaller --onefile --windowed `
+--add-data "Figury;Figury" `
+--add-data "Assets;Assets" ChessQT.py `
+--onefile --add-data "Figury;Figury" `
+```
+
+
+
 ## Work in Progress
 
 - 🌐 Online multiplayer mode

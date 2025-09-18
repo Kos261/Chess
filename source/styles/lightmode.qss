@@ -1,0 +1,30 @@
+
+QMessageBox {
+    background-color: #FFFFFF; 
+    color: #2196F3;            
+    font-family: Arial, sans-serif; 
+    font-size: 13pt;
+}
+
+QMessageBox QLabel {
+    color: #2196F3;           
+}
+QPushButton {
+    background-color: #FFFFFF;
+    border: 2px solid #2196F3;
+    border-radius: 30px;  /* Zaokrąglone rogi */
+    color: #2196F3;
+    padding: 10px 20px;
+    font-weight: bold;
+                        
+    font-family: Arial, sans-serif; /* Dodanie niestandardowej czcionki */
+    font-size: 13pt; /* Rozmiar czcionki */
+}
+QPushButton:hover {
+    background-color: #2196F3;
+    color: #FFFFFF;
+}
+QPushButton:pressed {
+    background-color: #64B5F6;
+    color: #FFFFFF;
+}

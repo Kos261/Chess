@@ -163,38 +163,7 @@ def neonMode(window):
     # Ustawianie stylu Fusion
     QApplication.setStyle(QStyleFactory.create('Fusion'))
     # window.button.setStyleSheet()
-    styleSheet = """
-        QMessageBox {
-            background-color: #000000; 
-            color: #39FF14;            
-            font-family: Arial, sans-serif; 
-            font-size: 13pt;           
-        }
-
-        QMessageBox QLabel {
-            color: #39FF14;           
-        }
-
-        QPushButton {
-            background-color: #000000;
-            border: 2px solid #39FF14;
-            border-radius: 30px;  /* Zaokrąglone rogi */
-            color: #39FF14;
-            padding: 10px 20px;
-            font-weight: bold;
-                                
-            font-family: Arial, sans-serif; /* Dodanie niestandardowej czcionki */
-            font-size: 13pt; /* Rozmiar czcionki */
-        }
-        QPushButton:hover {
-            background-color: #39FF14;
-            color: #000000;
-        }
-        QPushButton:pressed {
-            background-color: #0B0B0B;
-            color: #39FF14;
-        }
-        """
+    styleSheet = load_stylesheet("neonmode.qss")
     window.chessboard_color = palettes["NeonMode"]
     return styleSheet
 
@@ -219,37 +188,7 @@ def darkMode(window):
     QApplication.setStyle(QStyleFactory.create('Fusion'))
 
     # Stylizacja przycisku
-    styleSheet = """
-        QMessageBox {
-            background-color: #2E2E2E; /* Ciemnoszare tło */
-            color: #FFFFFF;            /* Biały tekst */
-            font-family: Arial, sans-serif; /* Dodanie niestandardowej czcionki */
-            font-size: 13pt;           /* Rozmiar czcionki */
-        }
-
-        QMessageBox QLabel {
-            color: #FFFFFF;            /* Biały tekst dla QLabel */
-        }
-        QPushButton {
-            background-color: #505050;  /* Ciemnoszary */
-            border: 2px solid #757575; /* Szary obramowanie */
-            border-radius: 30px;       /* Zaokrąglone rogi */
-            color: #FFFFFF;            /* Biały tekst */
-            padding: 10px 20px;
-            font-weight: bold;
-            
-            font-family: Arial, sans-serif; /* Dodanie niestandardowej czcionki */
-            font-size: 13pt; /* Rozmiar czcionki */
-        }
-        QPushButton:hover {
-            background-color: #757575; /* Szary tło */
-            color: #FFFFFF;            /* Biały tekst */
-        }
-        QPushButton:pressed {
-            background-color: #424242; /* Ciemniejszy szary */
-            color: #FFFFFF;            /* Biały tekst */
-        }
-        """
+    styleSheet = load_stylesheet("darkmode.qss")
     
         # # Stylizacja QTextEdit
         # window.text_edit.setStyleSheet("""
@@ -285,37 +224,7 @@ def lightMode(window):
 
     # Stylizacja przycisku
     # window.button.setStyleSheet()
-    styleSheet = """
-        QMessageBox {
-            background-color: #FFFFFF; 
-            color: #2196F3;            
-            font-family: Arial, sans-serif; 
-            font-size: 13pt;
-        }
-
-        QMessageBox QLabel {
-            color: #2196F3;           
-        }
-        QPushButton {
-            background-color: #FFFFFF;
-            border: 2px solid #2196F3;
-            border-radius: 30px;  /* Zaokrąglone rogi */
-            color: #2196F3;
-            padding: 10px 20px;
-            font-weight: bold;
-                                
-            font-family: Arial, sans-serif; /* Dodanie niestandardowej czcionki */
-            font-size: 13pt; /* Rozmiar czcionki */
-        }
-        QPushButton:hover {
-            background-color: #2196F3;
-            color: #FFFFFF;
-        }
-        QPushButton:pressed {
-            background-color: #64B5F6;
-            color: #FFFFFF;
-        }
-        """
+    styleSheet = load_stylesheet("lightmode.qss")
     window.chessboard_color = palettes["LightMode"]
     return styleSheet
 
@@ -341,84 +250,17 @@ def bridgerToneMode(window):
 
     # Stylizacja przycisku
     # window.button.setStyleSheet()
-    styleSheet = """
-        QMessageBox {
-            background-color: #22485A; 
-            color: #FFFFFF;            
-            font-family: Arial, sans-serif; 
-            font-size: 13pt;
-        }
-
-        QMessageBox QLabel {
-            color: #FFFFFF;           
-        }
-        QPushButton {
-            background-color: #22485A;  
-            border: 2px solid #172437;  
-            border-radius: 30px;
-            color: #FFFFFF;
-            padding: 10px 20px;
-            font-weight: bold;
-            font-family: Arial, sans-serif;
-            font-size: 13pt; 
-        }
-        QPushButton:hover {
-            background-color: #172437;  
-            color: #FFFFFF;
-        }
-        QPushButton:pressed {
-            background-color: #0F1925;  
-            color: #FFFFFF;
-        }
-    """
+    styleSheet = load_stylesheet("bridgertone.qss")
     window.chessboard_color = palettes["BridgerTone"]
     return styleSheet
 
-slider_stylesheet = '''QSlider::groove:horizontal {
-        border: 1px solid #bbb;
-        background: #ddd;
-        height: 8px;
-    }
+def load_stylesheet(filename):
+    path = os.path.join(os.path.dirname(__file__), "styles", filename)
+    with open(path, "r") as f:
+        return f.read()
 
-    QSlider::sub-page:horizontal {
-        background: #66b2ff;
-        border: 1px solid #66b2ff;
-        height: 8px;
-    }
 
-    QSlider::add-page:horizontal {
-        background: #e0e0e0;
-        border: 1px solid #777;
-        height: 8px;
-    }
-
-    QSlider::handle:horizontal {
-        background: #ffffff;
-        border: 2px solid #66b2ff;
-        width: 16px;
-        height: 16px;
-        margin: -4px 0; 
-    }
-
-    QSlider::handle:horizontal:hover {
-        background: #66b2ff;
-        border: 2px solid #66b2ff;
-    }
-
-    QSlider::sub-page:horizontal:disabled {
-        background: #bbb;
-        border-color: #999;
-    }
-
-    QSlider::add-page:horizontal:disabled {
-        background: #eee;
-        border-color: #999;
-    }
-
-    QSlider::handle:horizontal:disabled {
-        background: #eee;
-        border: 2px solid #aaa;
-    }'''
+slider_stylesheet = load_stylesheet("slider.qss")
 
 if __name__ == '__main__':
     app = QApplication(sys.argv)

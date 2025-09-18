@@ -1,0 +1,30 @@
+
+QMessageBox {
+    background-color: #2E2E2E; /* Ciemnoszare tło */
+    color: #FFFFFF;            /* Biały tekst */
+    font-family: Arial, sans-serif; /* Dodanie niestandardowej czcionki */
+    font-size: 13pt;           /* Rozmiar czcionki */
+}
+
+QMessageBox QLabel {
+    color: #FFFFFF;            /* Biały tekst dla QLabel */
+}
+QPushButton {
+    background-color: #505050;  /* Ciemnoszary */
+    border: 2px solid #757575; /* Szary obramowanie */
+    border-radius: 30px;       /* Zaokrąglone rogi */
+    color: #FFFFFF;            /* Biały tekst */
+    padding: 10px 20px;
+    font-weight: bold;
+    
+    font-family: Arial, sans-serif; /* Dodanie niestandardowej czcionki */
+    font-size: 13pt; /* Rozmiar czcionki */
+}
+QPushButton:hover {
+    background-color: #757575; /* Szary tło */
+    color: #FFFFFF;            /* Biały tekst */
+}
+QPushButton:pressed {
+    background-color: #424242; /* Ciemniejszy szary */
+    color: #FFFFFF;            /* Biały tekst */
+}

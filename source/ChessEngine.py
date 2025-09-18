@@ -5,29 +5,30 @@ class GameState():
 
         self.GUI = GUI
         # Pierwsza litera kolor, druga rodzaj R-rook, N-knight, B-bishop, Q-queen, K-king "--" puste
-        # self.board = [
-        #     ["bR","bN","bB","bQ","bK","bB","bN","bR"],
-        #     ["bp","bp","bp","bp","bp","bp","bp","bp"],
-        #     ["--","--","--","--","--","--","--","--"],
-        #     ["--","--","--","--","--","--","--","--"],
-        #     ["--","--","--","--","--","--","--","--"],
-        #     ["--","--","--","--","--","--","--","--"],
-        #     ["wp","wp","wp","wp","wp","wp","wp","wp"],
-        #     ["wR","wN","wB","wQ","wK","wB","wN","wR"]]
-        
         self.board = [
-          ["--","--","--","--","bK","--","--","--"],
-          ["--","--","--","--","--","--","wp","--"],
-          ["--","--","--","--","--","--","--","--"],
-          ["--","--","--","--","--","--","--","--"],
-          ["--","--","--","--","--","--","--","--"],
-          ["--","--","--","--","--","--","--","--"],
-          ["--","--","--","--","--","--","--","--"],
-          ["--","--","--","--","wK","--","--","--"]]
+            ["bR","bN","bB","bQ","bK","bB","bN","bR"],
+            ["bp","bp","bp","bp","bp","bp","bp","bp"],
+            ["--","--","--","--","--","--","--","--"],
+            ["--","--","--","--","--","--","--","--"],
+            ["--","--","--","--","--","--","--","--"],
+            ["--","--","--","--","--","--","--","--"],
+            ["wp","wp","wp","wp","wp","wp","wp","wp"],
+            ["wR","wN","wB","wQ","wK","wB","wN","wR"]]
+        
+        # self.board = [
+        #   ["--","--","--","--","bK","--","--","--"],
+        #   ["--","--","--","--","--","--","wp","--"],
+        #   ["--","--","--","--","--","--","--","--"],
+        #   ["--","--","--","--","--","--","--","--"],
+        #   ["--","--","--","--","--","--","--","--"],
+        #   ["--","--","--","--","--","--","--","--"],
+        #   ["--","--","--","--","--","--","--","--"],
+        #   ["--","--","--","--","wK","--","--","--"]]
         # self.currentCastlingRight = CastleRights(True,True,True,True)
         self.currentCastlingRight = CastleRights(False,False,False,False)
         self.GUI.append_text("WARNING \n--DEBUG MODE--")
         self.GUI.append_text("WARNING \nCASTLING OFF!!!!")
+        self.GUI.append_text("WARNING \nPAWN PROMO OFF!!!")
 
         
 
@@ -110,6 +111,39 @@ class GameState():
         
         self.enpassantPossibleLog.append(self.enpassantPossible)
 
+
+    def undoMove(self):
+        if len(self.moveLog) != 0:
+            move = self.moveLog.pop()
+            self.board[move.startRow][move.startCol] = move.pieceMoved
+            self.board[move.endRow][move.endCol] = move.pieceCaptured
+            self.WhiteToMove = not self.WhiteToMove
+            if move.pieceMoved == "wK":
+                self.whiteKingLocation = (move.startRow , move.startCol)
+            elif move.pieceMoved == "bK":
+                self.blackKingLocation = (move.startRow , move.startCol)
+
+            #Undo enpassant
+            if move.isEnPassantMove:
+                self.board[move.endRow][move.endCol] = '--'
+                self.board[move.startRow][move.endCol] = move.pieceCaptured
+            
+            self.enpassantPossibleLog.pop()
+            self.enpassantPossible = self.enpassantPossibleLog[-1]
+
+            #Undo castling
+            self.castleRightsLog.pop()
+            self.currentCastlingRight = self.castleRightsLog[-1]
+            if move.isCastleMove:
+                if move.endCol - move.startCol == 2:    #King side castle
+                    self.board[move.endRow][move.endCol+1] = self.board[move.endRow][move.endCol-1]
+                    self.board[move.endRow][move.endCol-1] = '--'
+                else: #Queen side castle
+                    self.board[move.endRow][move.endCol-2] = self.board[move.endRow][move.endCol+1]
+                    self.board[move.endRow][move.endCol+1] = '--'
+
+            self.checkMate = False
+            self.staleMate = False
 
     def updateCastleRights(self,move):
 
